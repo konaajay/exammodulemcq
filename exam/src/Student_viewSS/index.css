@@ -1,0 +1,380 @@
+/* GLOBAL RESET - Bootstrap handles most of this, but keeping for consistency */
+* {
+  padding: 0px;
+  margin: 0px;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Fluid Images */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Responsive Containers */
+.container-fluid {
+  width: 100%;
+  padding-right: var(--bs-gutter-x, 0.75rem);
+  padding-left: var(--bs-gutter-x, 0.75rem);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar Global */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 10px;
+  border: 2px solid var(--bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+:root {
+  /* Default Light Theme Variables */
+  --primary: #0d6efd;
+  /* Bootstrap Blue */
+  --accent: #0dcaf0;
+  --muted: #6b7280;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --card-bg: #ffffff;
+  --sidebar-bg: #ffffff;
+  --text-color: #0f172a;
+  --hover-bg: rgba(15, 23, 42, 0.04);
+  --border: rgba(15, 23, 42, 0.06);
+
+  --main-bg: var(--bg);
+  --content-bg: var(--surface);
+}
+
+/* THEME VARIABLES - Dark Mode Override */
+[data-theme="dark"] {
+  --primary: #3b82f6;
+  /* Modern Blue */
+  --accent: #60a5fa;
+  --muted: #94a3b8;
+  --bg: #0b1220;
+  --surface: #0f1724;
+  --card-bg: #0f172a;
+  --sidebar-bg: #0b1220;
+  --text-color: #e6eef8;
+  --hover-bg: rgba(230, 238, 248, 0.06);
+  --border: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="light"] {
+  /* Use defaults from :root, but kept for explicit switching if needed */
+  --primary: #0d6efd;
+  --accent: #0dcaf0;
+  --muted: #000000;
+  /* Pure Black for maximum visibility */
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --card-bg: #ffffff;
+  --sidebar-bg: #ffffff;
+  --text-color: #000000;
+  /* Pure Black for maximum visibility */
+  --hover-bg: rgba(15, 23, 42, 0.04);
+  --border: rgba(15, 23, 42, 0.06);
+}
+
+/* Force ALL white text to black in light mode for accessibility */
+[data-theme="light"] .text-white,
+[data-theme="light"] .cert-title.text-white,
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6,
+[data-theme="light"] .h1,
+[data-theme="light"] .h2,
+[data-theme="light"] .h3,
+[data-theme="light"] .h4,
+[data-theme="light"] .h5,
+[data-theme="light"] .h6 {
+  color: #000000 !important;
+}
+
+/* Bootstrap theme overrides using CSS variables */
+.text-primary {
+  color: var(--primary) !important;
+}
+
+.text-body {
+  color: var(--text-color) !important;
+}
+
+.text-muted,
+.text-secondary {
+  color: var(--muted) !important;
+  opacity: 1 !important;
+  /* Force full opacity for visibility */
+}
+
+.btn-primary {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+  background-color: color-mix(in srgb, var(--primary) 85%, black 15%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3);
+}
+
+.btn-secondary {
+  background-color: #2563eb !important;
+  /* Royal Blue */
+  border-color: transparent !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: #1d4ed8 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+}
+
+/* Global Visibility Fix for Buttons as requested */
+.btn-outline-light,
+.btn-light,
+.btn-outline-secondary,
+.btn-outline-dark,
+.btn-outline-primary {
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+  background: transparent !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-outline-light:hover,
+.btn-light:hover,
+.btn-outline-secondary:hover,
+.btn-outline-dark:hover,
+.btn-outline-primary:hover {
+  background: var(--primary) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Sidebar active state - Bootstrap nav-link active styling */
+.nav-link.active {
+  background-color: var(--hover-bg) !important;
+  font-weight: 600 !important;
+  color: var(--primary) !important;
+}
+
+/* Responsive sidebar margin - handled via JS but keeping for fallback */
+@media (min-width: 769px) {
+  .dashboard-content {
+    margin-left: 70px;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-open~.dashboard-content {
+    margin-left: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar-closed {
+    transform: translateX(-100%);
+  }
+
+  .sidebar-open {
+    transform: translateX(0);
+  }
+}
+
+/* Custom Sticky Utility for Large Screens Only */
+@media (min-width: 992px) {
+  .sticky-lg-top {
+    position: sticky;
+    top: 100px;
+    /* Matching the inline style previously used, can be overridden inline */
+    z-index: 1020;
+  }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+}
+
+/* Context Nav Hover Effects */
+.transition-smooth {
+  transition: all 0.3s ease;
+}
+
+.context-nav-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.context-nav-hover:hover {
+  background-color: var(--hover-bg) !important;
+  color: var(--primary) !important;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================
+   VISUAL HIERARCHY REFINEMENTS (Admin UI)
+   ========================================= */
+
+/* 1. TOP NAVBAR - Strongest Layer */
+.d-flex.flex-column>.flex-shrink-0:first-child>div {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  z-index: 1040;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+/* 2. SUB NAV (ContextNav) - Secondary Layer */
+.d-flex.flex-column>.flex-shrink-0:nth-child(2)>div,
+.d-flex.flex-column>.flex-shrink-0:nth-child(2) .bg-white.border-bottom {
+  border-bottom-color: var(--border) !important;
+  box-shadow: none !important;
+}
+
+/* Level 3 Nav soft style */
+.d-flex.flex-column>.flex-shrink-0:nth-child(2) .bg-light.border-bottom {
+  background-color: var(--bg) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+/* 3. PAGE HEADERS - "Like Content" */
+.batches-header-premium,
+.create-header,
+.webinar-header,
+.card-header,
+.page-header {
+  box-shadow: none !important;
+  border-bottom: none !important;
+  background-color: transparent !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-bottom: 1.5rem !important;
+}
+
+/* Ensure sticky headers still work but look integrated */
+.sticky-lg-top {
+  background: var(--surface) !important;
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Reduce Vertical Spacing in Content Area */
+main.flex-grow-1>div.container-fluid.py-4 {
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+/* Refine Sub-Nav Items for "Attached" look */
+.sub-nav-item-circle {
+  margin-bottom: 0.25rem !important;
+}
+
+/* =========================================
+   BOOTSTRAP THEME ADAPTATIONS
+   ========================================= */
+
+/* Fix close button visibility in dark mode */
+[data-theme="dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Standardize form controls for dark mode */
+[data-theme="dark"] .form-select,
+[data-theme="dark"] .form-control {
+  background-color: var(--surface) !important;
+  border-color: var(--border) !important;
+  color: var(--text-color) !important;
+}
+
+[data-theme="dark"] .form-select:focus,
+[data-theme="dark"] .form-control:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 0.25rem rgba(124, 58, 237, 0.25) !important;
+}
+
+/* Modal and Table dark mode adaptations */
+[data-theme="dark"] .modal-content {
+  background-color: var(--surface);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .table {
+  color: var(--text-color);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .table-light {
+  --bs-table-bg: var(--hover-bg);
+  --bs-table-color: var(--text-color);
+}

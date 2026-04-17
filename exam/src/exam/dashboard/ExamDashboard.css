@@ -1,0 +1,77 @@
+/* Exam Dashboard Specific Styles */
+.exam-dashboard-container {
+    padding: 1rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.dashboard-header h2 {
+    font-weight: 800;
+    font-size: 1.75rem;
+    letter-spacing: -0.025em;
+    color: #0f172a;
+    margin-bottom: 0px;
+}
+
+/* Metric Icons - Vibrant Gradients */
+.icon-box.icon-primary { background: linear-gradient(135deg, #3b82f6, #2563eb) !important; color: white !important; }
+.icon-box.icon-indigo { background: linear-gradient(135deg, #6366f1, #4f46e5) !important; color: white !important; }
+.icon-box.icon-success { background: linear-gradient(135deg, #22c55e, #16a34a) !important; color: white !important; }
+.icon-box.icon-warning { background: linear-gradient(135deg, #f59e0b, #d97706) !important; color: white !important; }
+
+/* Dashboard UI Refinements */
+.table-header-filters {
+    background: rgba(248, 250, 252, 0.5);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.btn-icon-light {
+    border: 1px solid transparent;
+    background: rgba(241, 245, 249, 0.8);
+    padding: 0.5rem;
+    border-radius: 0.75rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-icon-light:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.fs-7 { font-size: 0.875rem; }
+
+@media (max-width: 768px) {
+    .exam-dashboard-container { padding: 1.25rem; }
+    .dashboard-header { flex-direction: column; align-items: flex-start; margin-bottom: 2rem; gap: 1rem; }
+    .dashboard-header h1 { font-size: 1.75rem; }
+    .dashboard-header p { font-size: 0.875rem; }
+    .btn-premium { width: 100%; justify-content: center; }
+
+    .icon-box {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    .icon-box svg {
+        width: 18px;
+        height: 18px;
+    }
+    .glass-card .p-4 {
+        padding: 1rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .exam-dashboard-container { padding: 1rem; }
+    .dashboard-header h1 { font-size: 1.5rem; }
+}

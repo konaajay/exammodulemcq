@@ -1,0 +1,158 @@
+/* src/components/layout/StudentSidebar.css */
+
+.student-sidebar {
+    width: 260px;
+    height: calc(100vh - 72px);
+    background-color: var(--sidebar-bg);
+    color: var(--muted);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border-right: 1px solid var(--border);
+    z-index: 1100;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+
+.student-sidebar.is-collapsed {
+    width: 80px;
+}
+
+.student-sidebar.is-collapsed .student-sidebar-brand {
+    justify-content: center;
+    padding: 24px 0;
+}
+
+.student-sidebar.is-collapsed .student-nav-item {
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.student-sidebar.is-collapsed .brand-logo {
+    margin-right: 0 !important;
+}
+
+.student-sidebar-brand {
+    padding: 32px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.student-sidebar-brand h3 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--primary);
+    letter-spacing: -0.5px;
+}
+
+.student-sidebar-nav {
+    flex: 1;
+    padding: 0 12px;
+    overflow-y: overlay;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Custom Scrollbar for Sidebar */
+.student-sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.student-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.student-sidebar-nav::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+}
+
+.student-sidebar-nav:hover::-webkit-scrollbar-thumb {
+    background: var(--muted);
+    opacity: 0.3;
+}
+
+.student-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--muted) !important;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.student-nav-item:hover {
+    color: var(--text-color) !important;
+    background: var(--hover-bg) !important;
+}
+
+.student-nav-item.active {
+    color: var(--primary) !important;
+    background: var(--hover-bg) !important;
+    font-weight: 700;
+}
+
+.student-nav-item.active .nav-icon {
+    color: var(--primary) !important;
+    opacity: 1;
+}
+
+.student-nav-item .nav-icon {
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.student-nav-item.active .nav-icon,
+.student-nav-item:hover .nav-icon {
+    opacity: 1;
+}
+
+.student-nav-item .nav-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.student-sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.student-logout-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.student-logout-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.navigation-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.navigation-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}

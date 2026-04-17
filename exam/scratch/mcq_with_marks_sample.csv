@@ -1,0 +1,4 @@
+question,optionA,optionB,optionC,optionD,correctOption,explanation,marks
+What is the derivative of x^2?,2x,x,2,x^2,A,The power rule states d/dx(x^n) = nx^(n-1),5
+Which planet is known as the Red Planet?,Mars,Venus,Jupiter,Saturn,A,Mars has a reddish appearance due to iron oxide on its surface.,2
+What is the capital of France?,Paris,London,Berlin,Madrid,A,Paris is the largest city and capital of France.,3
