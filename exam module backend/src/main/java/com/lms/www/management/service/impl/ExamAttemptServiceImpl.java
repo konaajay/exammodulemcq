@@ -58,8 +58,16 @@ public class ExamAttemptServiceImpl implements ExamAttemptService {
             throw new RuntimeException("Access Restricted: Maximum attempts (" + exam.getMaxAttempts() + ") reached for this email.");
         }
 
+        // Auto-link to existing student if email matches
+        Long studentId = studentRepository.findByEmail(email)
+                .map(Student::getId)
+                .orElse(null);
+
         ExamAttempt attempt = ExamAttempt.builder()
-                .examId(exam.getId()).studentName(name).studentEmail(email)
+                .examId(exam.getId())
+                .studentId(studentId) // Link found ID or keep null
+                .studentName(name)
+                .studentEmail(email)
                 .startTime(LocalDateTime.now(ZoneId.of(IST_ZONE)))
                 .status("STARTED")
                 .token(UUID.randomUUID().toString()).build();
