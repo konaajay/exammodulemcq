@@ -43,6 +43,13 @@ public class AuthController {
             var student = studentOpt.get();
             if (passwordEncoder.matches(request.getPassword(), student.getPassword())) {
                 System.out.println("Student found and authenticated: " + email);
+                
+                // Update firstLogin flag if this is their first time
+                if (Boolean.TRUE.equals(student.getFirstLogin())) {
+                    student.setFirstLogin(false);
+                    studentRepository.save(student);
+                }
+
                 return ResponseEntity.ok(Map.of(
                         "id", student.getId(),
                         "email", student.getEmail(),

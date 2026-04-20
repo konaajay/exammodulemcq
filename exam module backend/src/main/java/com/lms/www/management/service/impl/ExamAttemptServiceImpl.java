@@ -47,10 +47,10 @@ public class ExamAttemptServiceImpl implements ExamAttemptService {
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
         validateExamWindow(exam);
         
-        // Check Attempt Limits
-        int existingCount = attemptRepository.countByStudentIdAndExamId(null, exam.getId()); // Using email for guests later, but following studentId pattern
+        // Check Attempt Limits (By Email for public attempts)
+        int existingCount = attemptRepository.countByStudentEmailAndExamId(email, exam.getId());
         if (existingCount >= exam.getMaxAttempts()) {
-            throw new RuntimeException("Maximum attempts (" + exam.getMaxAttempts() + ") reached for this exam.");
+            throw new RuntimeException("Maximum attempts (" + exam.getMaxAttempts() + ") reached for this email.");
         }
 
         ExamAttempt attempt = ExamAttempt.builder()
@@ -98,8 +98,13 @@ public class ExamAttemptServiceImpl implements ExamAttemptService {
         attempt.setSubmittedAt(LocalDateTime.now());
         attempt.setStatus("COMPLETED");
         
-        // Calculate Attempt Number
-        int count = attemptRepository.countByStudentIdAndExamId(studentId, attempt.getExamId());
+        // Calculate Attempt Number based on available identification (ID or Email)
+        int count;
+        if (attempt.getStudentId() != null) {
+            count = attemptRepository.countByStudentIdAndExamId(attempt.getStudentId(), attempt.getExamId());
+        } else {
+            count = attemptRepository.countByStudentEmailAndExamId(attempt.getStudentEmail(), attempt.getExamId());
+        }
         attempt.setAttemptNumber(count + 1);
 
         // Final score calculation before saving

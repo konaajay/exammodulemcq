@@ -12,4 +12,5 @@ public interface ExamAttemptRepository extends JpaRepository<ExamAttempt, Long> 
     List<ExamAttempt> findByStudentIdOrderByStartTimeDesc(Long studentId);
     List<ExamAttempt> findByStudentIdAndExamIdOrderByAttemptNumberDesc(Long studentId, Long examId);
     int countByStudentIdAndExamId(Long studentId, Long examId);
+    int countByStudentEmailAndExamId(String studentEmail, Long examId);
 }
