@@ -1,6 +1,7 @@
 package com.lms.www.management.service.impl;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -21,6 +22,8 @@ public class ExamAttemptServiceImpl implements ExamAttemptService {
     private final ExamResponseRepository responseRepository;
     private final StudentRepository studentRepository;
 
+    private static final String IST_ZONE = "Asia/Kolkata";
+
     @Override
     public ExamAttempt startAttempt(Long examId, Long studentId) {
         Exam exam = examRepository.findById(examId)
@@ -35,7 +38,7 @@ public class ExamAttemptServiceImpl implements ExamAttemptService {
                 .studentId(studentId)
                 .studentName(student.getName())
                 .studentEmail(student.getEmail())
-                .startTime(LocalDateTime.now())
+                .startTime(LocalDateTime.now(ZoneId.of(IST_ZONE)))
                 .status("STARTED")
                 .build();
         return attemptRepository.save(attempt);
@@ -43,6 +46,7 @@ public class ExamAttemptServiceImpl implements ExamAttemptService {
 
     @Override
     public ExamAttempt startPublicAttempt(Long examId, String name, String email) {
+        System.out.println("Starting public attempt for: " + email + " on exam: " + examId);
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() -> new RuntimeException("Exam not found"));
         validateExamWindow(exam);
@@ -50,20 +54,25 @@ public class ExamAttemptServiceImpl implements ExamAttemptService {
         // Check Attempt Limits (By Email for public attempts)
         int existingCount = attemptRepository.countByStudentEmailAndExamId(email, exam.getId());
         if (existingCount >= exam.getMaxAttempts()) {
-            throw new RuntimeException("Maximum attempts (" + exam.getMaxAttempts() + ") reached for this email.");
+            System.out.println("Limit reached for email: " + email);
+            throw new RuntimeException("Access Restricted: Maximum attempts (" + exam.getMaxAttempts() + ") reached for this email.");
         }
 
         ExamAttempt attempt = ExamAttempt.builder()
                 .examId(exam.getId()).studentName(name).studentEmail(email)
-                .startTime(LocalDateTime.now()).status("STARTED")
+                .startTime(LocalDateTime.now(ZoneId.of(IST_ZONE)))
+                .status("STARTED")
                 .token(UUID.randomUUID().toString()).build();
         return attemptRepository.save(attempt);
     }
 
     private void validateExamWindow(Exam exam) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of(IST_ZONE));
+        System.out.println("Validating exam window. Now (IST): " + now + ", Start (DB): " + exam.getStartTime());
+        
         if (exam.getStartTime() != null && now.isBefore(exam.getStartTime())) 
-            throw new RuntimeException("Exam starts at: " + exam.getStartTime());
+            throw new RuntimeException("Exam starts at: " + exam.getStartTime() + " (Current time: " + now.toLocalTime() + " IST)");
+        
         if (exam.getEndTime() != null && now.isAfter(exam.getEndTime())) 
             throw new RuntimeException("Exam closed at: " + exam.getEndTime());
     }
@@ -91,11 +100,12 @@ public class ExamAttemptServiceImpl implements ExamAttemptService {
     @Override
     @Transactional
     public ExamAttempt submitAttempt(Long attemptId, Long studentId) {
+        System.out.println("Submitting attempt: " + attemptId);
         ExamAttempt attempt = attemptRepository.findById(attemptId)
                 .orElseThrow(() -> new RuntimeException("Attempt not found"));
         
-        attempt.setEndTime(LocalDateTime.now());
-        attempt.setSubmittedAt(LocalDateTime.now());
+        attempt.setEndTime(LocalDateTime.now(ZoneId.of(IST_ZONE)));
+        attempt.setSubmittedAt(LocalDateTime.now(ZoneId.of(IST_ZONE)));
         attempt.setStatus("COMPLETED");
         
         // Calculate Attempt Number based on available identification (ID or Email)
@@ -105,7 +115,10 @@ public class ExamAttemptServiceImpl implements ExamAttemptService {
         } else {
             count = attemptRepository.countByStudentEmailAndExamId(attempt.getStudentEmail(), attempt.getExamId());
         }
-        attempt.setAttemptNumber(count + 1);
+        
+        // Since the current record is already saved in startAttempt, count includes it.
+        // So the attemptNumber should be exactly 'count'.
+        attempt.setAttemptNumber(Math.max(1, count));
 
         // Final score calculation before saving
         Map<String, Object> resultData = (Map<String, Object>) getResult(attemptId, studentId);
