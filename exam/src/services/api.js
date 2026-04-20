@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:3131',
+    baseURL: 'https://exammodulemcq.onrender.com',
     timeout: 120000 // 120 seconds for large bulk uploads
 });
 
