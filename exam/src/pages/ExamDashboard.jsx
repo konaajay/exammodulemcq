@@ -76,7 +76,7 @@ const ExamDashboard = () => {
     );
 
     return (
-        <div className="min-vh-100 bg-royal pb-5">
+        <div className="bg-transparent pb-5">
             <ToastContainer position="bottom-right" />
             
 
@@ -203,12 +203,17 @@ const ExamDashboard = () => {
                                                 <div className="fw-bold text-dark">{exam.title}</div>
                                                 <div className="d-flex align-items-center gap-3 mt-1 text-muted fs-xs">
                                                     <span className="d-flex align-items-center gap-1"><Clock size={12} /> {exam.durationMinutes}m</span>
-                                                    <span className="d-flex align-items-center gap-1"><FileText size={12} /> {exam.questions?.length || 0} Qs</span>
+                                                    <span className="d-flex align-items-center gap-1">
+                                                        <FileText size={12} /> 
+                                                        {(exam.questions?.length > 0) 
+                                                            ? exam.questions.length 
+                                                            : (exam.questionSets?.reduce((acc, set) => acc + (set.questions?.length || 0), 0) || 0)
+                                                        } Qs
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-4">
                                                 <div className="fw-bold text-secondary small">{exam.course}</div>
-                                                <div className="fs-xs text-muted opacity-75">Global Batch</div>
                                             </td>
                                             <td className="px-4 py-4">
                                                 <span className={`badge px-3 py-2 rounded-pill small fw-bold ${
@@ -251,13 +256,13 @@ const ExamDashboard = () => {
             </div>
 
             <style>{`
-                .bg-royal { background: #f8fafc; }
+                .bg-royal { background: #ffffff; }
                 .ls-wide { letter-spacing: 0.1em; }
                 .fs-xs { font-size: 0.7rem; }
                 .z-1030 { z-index: 1030; }
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 .hover-row:hover { background: rgba(13, 110, 253, 0.02) !important; }
-                .hover-text-primary:hover { color: #0d6efd !important; }
+                .hover-text-primary:hover { color: #4f46e5 !important; }
                 .hover-text-warning:hover { color: #f59e0b !important; }
                 .hover-text-danger:hover { color: #ef4444 !important; }
                 .transition-all { transition: all 0.2s ease-in-out; }

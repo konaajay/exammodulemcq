@@ -7,7 +7,11 @@ import com.lms.www.management.model.Question;
 
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Long> {
-    boolean existsByQuestionTextIgnoreCase(String questionText);
-    java.util.Optional<Question> findByQuestionTextIgnoreCase(String questionText);
-    java.util.List<Question> findAllByQuestionTextInIgnoreCase(java.util.Collection<String> questionTexts);
+    boolean existsByQuestionText(String questionText);
+    java.util.Optional<Question> findByQuestionText(String questionText);
+    
+    @org.springframework.data.jpa.repository.Query(value = "SELECT * FROM questions WHERE LOWER(question_text) = LOWER(:questionText) LIMIT 1", nativeQuery = true)
+    java.util.Optional<Question> findByQuestionTextIgnoreCase(@org.springframework.data.repository.query.Param("questionText") String questionText);
+    
+    java.util.List<Question> findAllByQuestionTextIn(java.util.Collection<String> questionTexts);
 }

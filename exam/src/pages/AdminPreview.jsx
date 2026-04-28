@@ -17,13 +17,23 @@ const AdminPreview = () => {
     const [questions, setQuestions] = useState([]);
     const [currentIdx, setCurrentIdx] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [palettePage, setPalettePage] = useState(0);
+    const questionsPerPage = 100;
+    const paletteRef = React.useRef(null);
 
     useEffect(() => {
         const fetchExam = async () => {
             try {
                 const data = await examService.getExamById(examId);
                 setExam(data);
-                setQuestions(data.questions || []);
+                
+                // If the new questionSets structure is used, load the first set by default
+                if (data.questionSets && data.questionSets.length > 0) {
+                    setQuestions(data.questionSets[0].questions || []);
+                } else {
+                    setQuestions(data.questions || []);
+                }
+                
                 setLoading(false);
             } catch (err) {
                 alert("Failed to load exam preview.");
@@ -33,6 +43,21 @@ const AdminPreview = () => {
         fetchExam();
     }, [examId, navigate]);
 
+    // Auto-scroll and page synchronization
+    useEffect(() => {
+        const targetPage = Math.floor(currentIdx / questionsPerPage);
+        if (targetPage !== palettePage) {
+            setPalettePage(targetPage);
+        }
+
+        if (paletteRef.current) {
+            const activeButton = paletteRef.current.querySelector('.palette-btn.current');
+            if (activeButton) {
+                activeButton.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+    }, [currentIdx, questions, palettePage]);
+
     if (loading) return (
         <div className="min-vh-100 d-flex flex-column align-items-center justify-content-center bg-white">
             <Loader className="animate-spin text-primary mb-3" size={40} />
@@ -41,7 +66,7 @@ const AdminPreview = () => {
     );
 
     return (
-        <div className="min-vh-100 d-flex flex-column bg-white overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="min-vh-100 d-flex flex-column bg-white" style={{ fontFamily: "'Inter', sans-serif" }}>
             {/* Admin Header */}
             <header className="navbar navbar-dark bg-dark border-bottom px-4 py-2 sticky-top" style={{ height: '70px', zIndex: 1030 }}>
                 <div className="d-flex align-items-center gap-3">
@@ -70,9 +95,9 @@ const AdminPreview = () => {
                 </div>
             </header>
 
-            <div className="d-flex flex-grow-1 overflow-hidden h-100">
+            <div className="d-flex flex-grow-1">
                 {/* Main Content Area */}
-                <main className="flex-grow-1 overflow-auto bg-light p-4 p-lg-5">
+                <main className="flex-grow-1 bg-light p-4 p-lg-5">
                     <div className="mx-auto" style={{ maxWidth: '1000px' }}>
                         <div className="alert alert-info border border-info border-opacity-25 rounded-4 mb-4 d-flex align-items-center gap-3 shadow-sm">
                             <Info className="text-info" size={24} />
@@ -108,7 +133,8 @@ const AdminPreview = () => {
                 </main>
 
                 {/* Right Profile & Palette Sidebar (Simulation) */}
-                <aside className="bg-white border-start flex-shrink-0 p-4" style={{ width: '350px', overflowY: 'auto' }}>
+                <aside className="bg-white border-start flex-shrink-0 d-flex flex-column" style={{ width: '350px' }}>
+                    <div className="flex-grow-1 overflow-auto p-4" ref={paletteRef}>
                     {/* Mock Candidate Info */}
                     <div className="p-3 bg-light rounded-4 border border-light-subtle mb-4">
                         <div className="d-flex align-items-center gap-3">
@@ -138,37 +164,83 @@ const AdminPreview = () => {
                         ))}
                     </div>
 
+                    {/* Paper Switcher for Multi-paper Exams */}
+                    {exam?.questionSets && exam.questionSets.length > 1 && (
+                        <div className="mb-4">
+                            <h6 className="fw-bold text-dark small mb-3">SELECT PAPER TO PREVIEW</h6>
+                            <div className="d-flex flex-wrap gap-2">
+                                {exam.questionSets.map((set, idx) => (
+                                    <button
+                                        key={set.id || idx}
+                                        onClick={() => {
+                                            setQuestions(set.questions || []);
+                                            setCurrentIdx(0);
+                                        }}
+                                        className={`btn btn-sm rounded-pill px-3 fw-bold transition-all ${
+                                            questions === set.questions ? 'btn-dark' : 'btn-outline-dark opacity-50'
+                                        }`}
+                                    >
+                                        {set.setName || `Paper ${idx + 1}`}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Question Palette Grid Simulation */}
-                    <div className="bg-primary-subtle p-3 rounded-t-4 border-bottom border-primary-subtle">
+                    <div className="bg-primary-subtle p-3 rounded-t-4 border-bottom border-primary-subtle d-flex justify-content-between align-items-center">
                         <h6 className="mb-0 fw-bold text-primary small">PREVIEW: MAIN SECTION</h6>
+                        {questions.length > questionsPerPage && (
+                            <div className="d-flex gap-1">
+                                {Array.from({ length: Math.ceil(questions.length / questionsPerPage) }).map((_, i) => (
+                                    <button 
+                                        key={i}
+                                        onClick={() => setPalettePage(i)}
+                                        className={`btn btn-xs rounded-pill px-2 py-0 fs-xs ${palettePage === i ? 'btn-primary' : 'btn-light text-muted'}`}
+                                        style={{ fontSize: '0.6rem', minWidth: '45px' }}
+                                    >
+                                        {i * questionsPerPage + 1}-{(i + 1) * questionsPerPage}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div className="p-3 border rounded-b-4 mb-4">
-                        <div className="d-flex flex-wrap gap-2">
-                            {questions.map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setCurrentIdx(i)}
-                                    className={`palette-btn transition-all ${currentIdx === i ? 'current' : ''}`}
-                                >
-                                    {i + 1}
-                                </button>
-                            ))}
+                    <div className="p-2 border rounded-b-4 mb-4 bg-white shadow-sm">
+                        <div 
+                            className="d-grid gap-1" 
+                            style={{ 
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(30px, 1fr))',
+                            }}
+                        >
+                            {questions.slice(palettePage * questionsPerPage, (palettePage + 1) * questionsPerPage).map((_, i) => {
+                                const actualIdx = (palettePage * questionsPerPage) + i;
+                                return (
+                                    <button
+                                        key={actualIdx}
+                                        onClick={() => setCurrentIdx(actualIdx)}
+                                        className={`palette-btn transition-all ${currentIdx === actualIdx ? 'current' : ''}`}
+                                    >
+                                        {actualIdx + 1}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
                     <div className="alert alert-light border small text-muted">
                         <MoreHorizontal size={14} className="me-1" /> Use this grid to verify question sequence.
                     </div>
+                    </div>
                 </aside>
             </div>
 
             <style>{`
                 .palette-btn {
-                    width: 40px; height: 40px; border: 1px solid #dee2e6; border-radius: 6px;
-                    background: white; font-weight: bold; font-size: 0.85rem; color: #495057; display: flex; align-items: center; justify-content: center;
+                    width: 30px; height: 30px; border: 1px solid #dee2e6; border-radius: 6px;
+                    background: white; font-weight: bold; font-size: 0.75rem; color: #495057; display: flex; align-items: center; justify-content: center;
                 }
                 .palette-btn:hover { border-color: #0d6efd; color: #0d6efd; }
-                .palette-btn.current { border-color: #0d6efd; border-width: 2px; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1); }
+                .palette-btn.current { border-color: #0d6efd; border-width: 2px; box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1); }
                 
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

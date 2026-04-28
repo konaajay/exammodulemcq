@@ -1,454 +1,287 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { examService } from '../services/examService';
-import { questionService } from '../services/questionService';
-import { courseService } from '../services/courseService';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { 
-    Settings2, CheckCircle, Info, Plus, Upload, Trash2, 
-    FileText, Save, Download, AlertTriangle, ListChecks, 
-    Clock, Calendar, BookOpen, GraduationCap, ShieldAlert
+    ChevronLeft, Settings, Shield, Layout, Plus, Trash2,
+    Terminal, ChevronDown, ChevronUp
 } from 'lucide-react';
-import { toast, ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
+import { courseService } from '../services/courseService';
+
+import { useExamBuilder } from '../components/ExamBuilder/useExamBuilder';
+import QuestionForm from '../components/ExamBuilder/QuestionForm';
+import ReviewSidebar from '../components/ExamBuilder/ReviewSidebar';
 
 const CreateExam = () => {
     const navigate = useNavigate();
     const { id } = useParams();
-    const isEditMode = !!id;
-    
-    // 1. Core Exam State
-    const [examDetails, setExamDetails] = useState({
-        title: '',
-        instructions: 'General Instructions:\n1. Duration: 60 minutes.\n2. Do not refresh the page.',
-        durationMinutes: 60,
-        totalMarks: 0,
-        startTime: '',
-        endTime: '',
-        randomize: false,
-        maxAttempts: 1,
-        negativeMarks: 0,
-        passingPercentage: 40, // Local UI name
-        passPercentage: 40,    // Backend name
-        tabLock: false,
-        fullscreenMode: false,
-        course: ''
-    });
-
-    // 2. Questions List (Local State)
-    const [addedQuestions, setAddedQuestions] = useState([]);
-
-    // 3. Manual Question Form State
-    const [manualQuestion, setManualQuestion] = useState({
-        questionText: '',
-        optionA: '', optionB: '', optionC: '', optionD: '',
-        correctOption: 'A',
-        marks: 1,
-        explanation: ''
-    });
-
     const [courses, setCourses] = useState([]);
-    const [submitting, setSubmitting] = useState(false);
-    const [parsing, setParsing] = useState(false);
-    const [activeTab, setActiveTab] = useState('config'); // 'config', 'proctor', 'questions'
+    const [showDebug, setShowDebug] = useState(false);
+    
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'questions';
+    const setActiveTab = (tab) => setSearchParams({ tab });
 
-    const fetchInitialData = async () => {
-        try {
-            const courseList = await courseService.getAllCourses();
-            setCourses(courseList || []);
-
-            if (isEditMode) {
-                const data = await examService.getExamById(id);
-                if (data) {
-                    // Map backend data to UI state
-                    const { questions, ...details } = data;
-                    
-                    const formatDate = (dateString) => {
-                        if (!dateString) return '';
-                        const d = new Date(dateString);
-                        return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-                    };
-
-                    setExamDetails(prev => ({
-                        ...prev,
-                        ...details,
-                        startTime: formatDate(details.startTime),
-                        endTime: formatDate(details.endTime),
-                        passPercentage: details.passPercentage || details.passingPercentage || 40
-                    }));
-
-                    if (questions) setAddedQuestions(questions);
-                }
-            }
-        } catch (error) {
-            toast.error("Error loading exam/courses.");
-        }
-    };
+    const {
+        activeSetIndex, setActiveSetIndex,
+        examDetails, setExamDetails,
+        questionSets,
+        submitting, parsing,
+        handleDetailChange,
+        addQuestionSet,
+        removeQuestionSet,
+        addQuestionToSet,
+        removeQuestionFromSet,
+        duplicateQuestion,
+        editingQuestion,
+        setEditingQuestion,
+        updateQuestionInSet,
+        debugLogs,
+        handleBulkUpload,
+        saveExam
+    } = useExamBuilder();
 
     useEffect(() => {
-        fetchInitialData();
-    }, [id, isEditMode]);
+        const fetchCourses = async () => {
+            try {
+                const list = await courseService.getAllCourses();
+                setCourses(list || []);
+            } catch (e) { toast.error("Failed to load courses"); }
+        };
+        fetchCourses();
+    }, []);
 
-    // Derived total marks
-    const currentTotalMarks = addedQuestions.reduce((sum, q) => sum + (Number(q.marks) || 0), 0);
-
-    // Sync total marks to examDetails
-    useEffect(() => {
-        setExamDetails(prev => ({ ...prev, totalMarks: currentTotalMarks }));
-    }, [currentTotalMarks]);
-
-    const handleDetailChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setExamDetails(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-    };
-
-    const handleManualChange = (e) => {
-        const { name, value } = e.target;
-        setManualQuestion(prev => ({ ...prev, [name]: value }));
-    };
-
-    const addQuestionManually = () => {
-        if (!manualQuestion.questionText) { toast.error("Question text is required."); return; }
-        setAddedQuestions(prev => [...prev, { ...manualQuestion, questionType: 'MCQ', id: Date.now() }]);
-        setManualQuestion({
-            questionText: '',
-            optionA: '', optionB: '', optionC: '', optionD: '',
-            correctOption: 'A',
-            marks: 1,
-            explanation: ''
-        });
-        toast.success(`Question added to local list!`);
-    };
-
-    const handleBulkUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        setParsing(true);
-        try {
-            const resp = await questionService.parseCsv(file);
-            // resp is already the array of questions due to axios interceptor
-            const parsedQuestions = (resp || []).map(q => ({ ...q, id: Math.random() }));
-            setAddedQuestions(prev => [...prev, ...parsedQuestions]);
-            toast.success(`${parsedQuestions.length} questions parsed from CSV!`);
-        } catch (error) {
-            const errorMsg = error.response?.data?.message || error.message || "Unknown error";
-            toast.error(`Parsing failed: ${errorMsg}`);
-        } finally {
-            setParsing(false);
-            e.target.value = null;
-        }
-    };
-
-    const removeQuestion = (id) => {
-        setAddedQuestions(prev => prev.filter(q => q.id !== id));
-    };
-
-    const handleFinalSubmit = async () => {
-        if (!examDetails.title) { toast.error("Exam Title is required."); return; }
-        if (!examDetails.course) { toast.error("Course selection is required."); return; }
-        if (addedQuestions.length === 0) { toast.error("Please add at least one question."); return; }
-
-        // Time Validation
-        if (examDetails.startTime && examDetails.endTime) {
-            const start = new Date(examDetails.startTime);
-            const end = new Date(examDetails.endTime);
-            const durationMs = examDetails.durationMinutes * 60 * 1000;
-
-            if (start >= end) {
-                toast.error("Invalid Schedule: End Time must be later than Start Time.");
-                return;
-            }
-
-            if ((end - start) < durationMs) {
-                toast.error(`Invalid Schedule: The exam window must be at least ${examDetails.durationMinutes} minutes long to accommodate the exam duration.`);
-                return;
-            }
-        }
-
-        setSubmitting(true);
-        try {
-            const payload = {
-                examDetails: { ...examDetails },
-                questions: addedQuestions.map(({ id, ...q }) => {
-                    // If it's a real backend id (Number), keep it for the update update
-                    // If it's a Math.random() temp id, remove it
-                    if (typeof id === 'number') return { ...q, id };
-                    return q;
-                })
-            };
-            await examService.createWithQuestions(payload);
-            toast.success(isEditMode ? "Exam Updated Successfully!" : "Exam Created Successfully!");
-            setTimeout(() => navigate('/admin/dashboard'), 2000);
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Final submission failed.");
-        } finally {
-            setSubmitting(false);
-        }
-    };
+    const currentSet = questionSets[activeSetIndex];
 
     const downloadTemplate = () => {
         const headers = "questionText,optionA,optionB,optionC,optionD,correctOption,explanation,marks\n";
-        const sample = "What is React?,A Library,A Framework,A DB,A Tool,A,Popular JS Library,1\n";
-        const filename = 'mcq_template.csv';
-
-        const blob = new Blob([headers + sample], { type: 'text/csv' });
+        const blob = new Blob([headers], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
+        const a = document.createElement('a'); a.href = url; a.download = 'template.csv'; a.click();
     };
 
     return (
-        <div className="container py-5 mt-5">
-            <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+        <div className="create-exam-container animate-fade-in">
+            <ToastContainer />
             
-            <div className="row g-4">
-                {/* Tab Navigation Hub */}
-                <div className="col-lg-8">
-                    <div className="bg-white p-2 rounded-pill shadow-sm border mb-4 d-flex gap-2">
-                        {[
-                            { id: 'config', label: 'Configuration', icon: <Settings2 size={18} /> },
-                            { id: 'proctor', label: 'Proctoring', icon: <ShieldAlert size={18} /> },
-                            { id: 'questions', label: 'Questions', icon: <Plus size={18} /> }
-                        ].map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`btn flex-grow-1 rounded-pill py-2 fw-bold d-flex align-items-center justify-content-center gap-2 transition-all ${
-                                    activeTab === tab.id ? 'btn-primary shadow-sm' : 'btn-light border-0 opacity-75'
-                                }`}
-                            >
-                                {tab.icon} {tab.label}
-                            </button>
-                        ))}
-                    </div>
+            {/* Local header removed in favor of global Navbar */}
 
-                    {activeTab === 'config' && (
-                        <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 animate-fade-in">
-                        <div className="card-header bg-primary bg-opacity-10 border-0 p-4">
-                            <h4 className="fw-bold mb-0 d-flex align-items-center gap-2">
-                                <FileText className="text-primary" /> 1. Exam Configuration
-                            </h4>
+            <div className="content-layout">
+                <div className="main-content-scroll">
+                    {activeTab === 'questions' && (
+                        <div className="animate-fade-in">
+                            <div className="papers-tabs">
+                                {questionSets.map((set, idx) => (
+                                    <div 
+                                        key={idx} 
+                                        className={`paper-tab ${activeSetIndex === idx ? 'active' : ''}`}
+                                        onClick={() => setActiveSetIndex(idx)}
+                                    >
+                                        {set.setName} ({set.questions.length})
+                                        {questionSets.length > 1 && (
+                                            <button className="delete-paper" onClick={(e) => { e.stopPropagation(); removeQuestionSet(idx); }}>
+                                                <Trash2 size={12} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                <button className="add-paper-btn" onClick={addQuestionSet}>
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+
+                            <QuestionForm 
+                                activeSetName={currentSet.setName}
+                                onAddQuestion={addQuestionToSet}
+                                onBulkUpload={handleBulkUpload}
+                                downloadTemplate={downloadTemplate}
+                                editingQuestion={editingQuestion}
+                                setEditingQuestion={setEditingQuestion}
+                                onUpdateQuestion={updateQuestionInSet}
+                            />
                         </div>
-                        <div className="card-body p-4">
-                            <div className="row g-3">
-                                <div className="col-md-12">
-                                    <label className="form-label small fw-bold">Assessment Title</label>
-                                    <input name="title" value={examDetails.title} onChange={handleDetailChange} className="form-control rounded-3" placeholder="e.g. Final Semester Examination" />
+                    )}
+
+                    {activeTab === 'general' && (
+                        <div className="settings-section animate-fade-in">
+                            <h4 className="fw-bold mb-4">Exam Configuration</h4>
+                            <div className="row g-4">
+                                <div className="col-12">
+                                    <label className="form-label-sm">Exam Title</label>
+                                    <input className="form-control-minimal" name="title" value={examDetails.title} onChange={handleDetailChange} placeholder="Enter Exam Title" />
                                 </div>
                                 <div className="col-md-6">
-                                    <label className="form-label small fw-bold">Target Course</label>
-                                    <select name="course" value={examDetails.course} onChange={handleDetailChange} className="form-select rounded-3">
+                                    <label className="form-label-sm">Course</label>
+                                    <select className="form-select-minimal" name="course" value={examDetails.course} onChange={handleDetailChange}>
                                         <option value="">Select Course</option>
                                         {courses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                                     </select>
                                 </div>
-                                <div className="col-md-3">
-                                    <label className="form-label small fw-bold">Duration (Mins)</label>
-                                    <input type="number" name="durationMinutes" value={examDetails.durationMinutes} onChange={handleDetailChange} className="form-control rounded-3" />
-                                </div>
-                                <div className="col-md-3">
-                                    <label className="form-label small fw-bold">Calculated Marks</label>
-                                    <input type="number" name="totalMarks" value={examDetails.totalMarks} readOnly className="form-control rounded-3 bg-light opacity-75" />
+                                <div className="col-md-6">
+                                    <label className="form-label-sm">Duration (Minutes)</label>
+                                    <input type="number" className="form-control-minimal" name="durationMinutes" value={examDetails.durationMinutes} onChange={handleDetailChange} />
                                 </div>
                                 <div className="col-md-6">
-                                    <label className="form-label small fw-bold">Start Window (24-Hour Format)</label>
-                                    <input type="datetime-local" name="startTime" value={examDetails.startTime} onChange={handleDetailChange} className="form-control rounded-3" />
+                                    <label className="form-label-sm">Start Time</label>
+                                    <input type="datetime-local" className="form-control-minimal" name="startTime" value={examDetails.startTime} onChange={handleDetailChange} />
                                 </div>
                                 <div className="col-md-6">
-                                    <label className="form-label small fw-bold">End Window (24-Hour Format)</label>
-                                    <input type="datetime-local" name="endTime" value={examDetails.endTime} onChange={handleDetailChange} className="form-control rounded-3" />
+                                    <label className="form-label-sm">End Time</label>
+                                    <input type="datetime-local" className="form-control-minimal" name="endTime" value={examDetails.endTime} onChange={handleDetailChange} />
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="form-label-sm">Pass %</label>
+                                    <input type="number" className="form-control-minimal" name="passPercentage" value={examDetails.passPercentage} onChange={handleDetailChange} />
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="form-label-sm">Negative Marks</label>
+                                    <input type="number" step="0.25" className="form-control-minimal" name="negativeMarks" value={examDetails.negativeMarks} onChange={handleDetailChange} />
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="form-label-sm">Max Attempts</label>
+                                    <input type="number" className="form-control-minimal" name="maxAttempts" value={examDetails.maxAttempts} onChange={handleDetailChange} />
                                 </div>
                             </div>
-                        </div>
                         </div>
                     )}
 
-                    {activeTab === 'proctor' && (
-                        <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 animate-fade-in">
-                            <div className="card-header bg-dark bg-opacity-10 border-0 p-4">
-                                <h4 className="fw-bold mb-0 d-flex align-items-center gap-2">
-                                    <ShieldAlert className="text-dark" /> 2. Proctoring & Security
-                                </h4>
-                            </div>
-                            <div className="card-body p-4">
-                                <div className="row g-4">
-                                    <div className="col-md-6">
-                                        <div className={`p-4 rounded-4 border-2 transition-all ${examDetails.fullscreenMode ? 'border-primary bg-primary bg-opacity-10' : 'border-light bg-light'}`}>
-                                            <div className="form-check form-switch mb-2">
-                                                <input className="form-check-input" type="checkbox" name="fullscreenMode" checked={examDetails.fullscreenMode} onChange={handleDetailChange} />
-                                                <label className="form-check-label fw-bold">Fullscreen Mode</label>
-                                            </div>
-                                            <p className="text-muted small mb-0">Force student into fullscreen. Auto-submits on exit.</p>
+                    {activeTab === 'security' && (
+                        <div className="security-section animate-fade-in">
+                            <h4 className="fw-bold mb-4">Security & Proctoring</h4>
+                            <div className="vstack gap-4">
+                                {[
+                                    { label: 'Browser Tab Lock', name: 'tabLock', desc: 'Prevent students from switching tabs.' },
+                                    { label: 'Fullscreen Mode', name: 'fullscreenMode', desc: 'Force exam window to stay in fullscreen.' },
+                                    { label: 'Question Randomization', name: 'randomize', desc: 'Shuffle questions for every student.' }
+                                ].map(item => (
+                                    <div key={item.name} className="security-item p-3 rounded-4 bg-light d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 className="mb-1 fw-bold">{item.label}</h6>
+                                            <p className="text-muted small mb-0">{item.desc}</p>
                                         </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <div className={`p-4 rounded-4 border-2 transition-all ${examDetails.tabLock ? 'border-primary bg-primary bg-opacity-10' : 'border-light bg-light'}`}>
-                                            <div className="form-check form-switch mb-2">
-                                                <input className="form-check-input" type="checkbox" name="tabLock" checked={examDetails.tabLock} onChange={handleDetailChange} />
-                                                <label className="form-check-label fw-bold">Tab Switching Lock</label>
-                                            </div>
-                                            <p className="text-muted small mb-0">Strictly block tab switching or window minimization.</p>
-                                        </div>
-                                    </div>
-                                    <div className="col-md-6">
-                                        <label className="form-label small fw-bold">Negative Marks (per wrong answer)</label>
-                                        <input type="number" step="0.25" name="negativeMarks" value={examDetails.negativeMarks} onChange={handleDetailChange} className="form-control rounded-3" />
-                                    </div>
-                                    <div className="col-md-6">
-                                        <label className="form-label small fw-bold">Passing Percentage (%)</label>
-                                        <input type="number" name="passPercentage" value={examDetails.passPercentage} onChange={handleDetailChange} className="form-control rounded-3" />
-                                    </div>
-                                    <div className="col-md-6">
                                         <div className="form-check form-switch">
-                                            <input className="form-check-input" type="checkbox" name="randomize" checked={examDetails.randomize} onChange={handleDetailChange} />
-                                            <label className="form-check-label fw-bold">Shuffle Questions</label>
+                                            <input type="checkbox" className="form-check-input" name={item.name} checked={examDetails[item.name]} onChange={handleDetailChange} />
                                         </div>
                                     </div>
-                                    <div className="col-md-6">
-                                        <label className="form-label small fw-bold">Max Allowed Attempts</label>
-                                        <input type="number" name="maxAttempts" value={examDetails.maxAttempts} onChange={handleDetailChange} className="form-control rounded-3" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {activeTab === 'questions' && (
-                        <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 animate-fade-in">
-                        <div className="card-header bg-dark bg-opacity-10 border-0 p-4 d-flex justify-content-between align-items-center">
-                            <h4 className="fw-bold mb-0 d-flex align-items-center gap-2">
-                                <Plus className="text-dark" /> 2. Add Questions
-                            </h4>
-                            <div className="d-flex gap-2">
-                                <button onClick={downloadTemplate} className="btn btn-outline-dark btn-sm rounded-pill px-3 d-flex align-items-center gap-1">
-                                    <Download size={14} /> Download Template
-                                </button>
-                                <label className="btn btn-primary btn-sm rounded-pill px-3 d-flex align-items-center gap-1 cursor-pointer">
-                                    <Upload size={14} /> {parsing ? 'Parsing...' : 'Bulk Upload'}
-                                    <input type="file" className="d-none" accept=".csv" onChange={handleBulkUpload} disabled={parsing} />
-                                </label>
-                            </div>
-                        </div>
-                        <div className="card-body p-4 bg-light bg-opacity-50">
-                                <div className="bg-white p-4 rounded-4 border border-info border-opacity-25 mb-3">
-                                    <div className="d-flex justify-content-between align-items-center mb-3">
-                                        <h6 className="fw-bold mb-0 text-info d-flex align-items-center gap-2 small">
-                                            <Info size={16} /> MCQ QUESTION INPUT
-                                        </h6>
-                                    </div>
-                                    <div className="row g-3">
-                                        <div className="col-12">
-                                            <textarea name="questionText" value={manualQuestion.questionText} onChange={handleManualChange} className="form-control rounded-3" placeholder="Enter Question Statement..." rows="2"></textarea>
-                                        </div>
-                                        
-                                        {['A', 'B', 'C', 'D'].map(opt => (
-                                            <div key={opt} className="col-md-6">
-                                                <div className="input-group">
-                                                    <span className="input-group-text bg-light border-end-0">{opt}</span>
-                                                    <input name={`option${opt}`} value={manualQuestion[`option${opt}`]} onChange={handleManualChange} className="form-control border-start-0 py-2" placeholder={`Option ${opt}`} />
-                                                </div>
-                                            </div>
-                                        ))}
-                                        <div className="col-md-4">
-                                            <label className="form-label fs-xs fw-bold">Correct Option</label>
-                                            <select name="correctOption" value={manualQuestion.correctOption} onChange={handleManualChange} className="form-select rounded-3">
-                                                <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="col-md-2">
-                                            <label className="form-label fs-xs fw-bold">Marks</label>
-                                            <input type="number" name="marks" value={manualQuestion.marks} onChange={handleManualChange} className="form-control rounded-3" />
-                                        </div>
-                                        <div className="col-12">
-                                            <label className="form-label fs-xs fw-bold text-muted">Logical Explanation (For Students)</label>
-                                            <textarea name="explanation" value={manualQuestion.explanation} onChange={handleManualChange} className="form-control rounded-3" placeholder="Provide context or step-by-step solution..." rows="1"></textarea>
-                                        </div>
-                                        <div className="col-12 pt-2">
-                                            <button onClick={addQuestionManually} className="btn btn-info text-white w-100 rounded-pill fw-bold py-2 shadow-sm">
-                                                <Plus size={18} className="me-1" /> Append to List
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* RIGHT SIDE: PREVIEW AND SUBMIT */}
-                <div className="col-lg-4">
-                    <div className="sticky-top" style={{ top: '100px' }}>
-                        <div className="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-                            <div className="card-header bg-success bg-opacity-10 border-0 p-4">
-                                <h4 className="fw-bold mb-0 d-flex align-items-center gap-2 text-success">
-                                    <ListChecks /> 3. Build Preview
-                                </h4>
-                            </div>
-                            <div className="card-body p-0">
-                                <div className="bg-light p-3 border-bottom d-flex justify-content-between align-items-center">
-                                    <span className="small fw-bold">Items in state: {addedQuestions.length}</span>
-                                    <span className="badge bg-success rounded-pill fw-bold">{currentTotalMarks} Total Marks</span>
-                                </div>
-                                <div className="overflow-auto" style={{ maxHeight: '400px' }}>
-                                    {addedQuestions.length === 0 ? (
-                                        <div className="text-center py-5 opacity-50">
-                                            <AlertTriangle size={40} className="mb-2" />
-                                            <p className="small mb-0">No questions added yet.</p>
+                <ReviewSidebar 
+                    currentSet={currentSet}
+                    onRemoveQuestion={removeQuestionFromSet}
+                    onDuplicateQuestion={duplicateQuestion}
+                    onEditQuestion={(q) => setEditingQuestion(q)}
+                    onFinalSubmit={saveExam}
+                    submitting={submitting}
+                />
+            </div>
+
+            <div className={`debug-console ${showDebug ? 'expanded' : ''}`}>
+                <div className="debug-header" onClick={() => setShowDebug(!showDebug)}>
+                    <div className="d-flex align-items-center gap-2">
+                        <Terminal size={16} />
+                        <span className="small fw-bold">Debug Console</span>
+                    </div>
+                    {showDebug ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                </div>
+                {showDebug && (
+                    <div className="debug-content">
+                        <div className="row g-3">
+                            <div className="col-md-4">
+                                <label className="x-small fw-bold text-muted uppercase">Live Activity Log</label>
+                                <div className="debug-log-list">
+                                    {debugLogs.length === 0 && <div className="text-muted small">No logs yet...</div>}
+                                    {debugLogs.map((log, i) => (
+                                        <div key={i} className={`debug-log-item ${log.type}`}>
+                                            <span className="timestamp">[{log.timestamp}]</span>
+                                            <span className="message">{log.msg}</span>
                                         </div>
-                                    ) : (
-                                        addedQuestions.map((q, idx) => (
-                                            <div key={q.id} className="p-3 border-bottom bg-white hover-bg-gray transition-all d-flex justify-content-between align-items-center">
-                                                <div className="overflow-hidden me-2">
-                                                    <div className="d-flex align-items-center gap-2">
-                                                        <div className="small fw-bold text-truncate">{idx + 1}. {q.questionText}</div>
-                                                    </div>
-                                                    <div className="fs-xs text-muted mt-1">
-                                                        <span>Ans: {q.correctOption} • </span>
-                                                        {q.marks} Marks
-                                                    </div>
-                                                </div>
-                                                <button onClick={() => removeQuestion(q.id)} className="btn btn-link text-danger p-0 border-0 bg-transparent">
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </div>
-                                        ))
-                                    )}
+                                    ))}
                                 </div>
                             </div>
-                            <div className="card-footer p-4 border-0 bg-white">
-                                <button 
-                                    onClick={handleFinalSubmit} 
-                                    className="btn btn-success w-100 py-3 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2"
-                                    disabled={submitting}
-                                >
-                                    {submitting ? <span className="spinner-border spinner-border-sm" /> : <Save size={20} />}
-                                    {submitting ? 'Creating Assessment...' : 'Final Build & Create'}
-                                </button>
-                                <p className="text-center text-muted fs-xs mt-3 mb-0">
-                                    This will persist the exam and all questions to the database.
-                                </p>
+                            <div className="col-md-4">
+                                <label className="x-small fw-bold text-muted uppercase">Exam Details</label>
+                                <pre>{JSON.stringify(examDetails, null, 2)}</pre>
                             </div>
-                        </div>
-                        
-                        <div className="alert alert-warning rounded-4 border-0 shadow-sm p-4 d-flex gap-3">
-                            <Info size={24} className="flex-shrink-0" />
-                            <div className="small">
-                                <strong>Safety Link:</strong> Changes made here are only saved to the database once you click "Final Build". If you refresh the page, the local questions list will be lost.
+                            <div className="col-md-4">
+                                <label className="x-small fw-bold text-muted uppercase">Question Sets</label>
+                                <pre>{JSON.stringify(questionSets, null, 2)}</pre>
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
-            
+
             <style>{`
-                .fs-xs { font-size: 0.75rem; }
-                .hover-bg-gray:hover { background-color: #f8f9fa !important; }
+                .create-exam-container { display: flex; flex-direction: column; min-height: calc(100vh - 75px); background: #f8fafc; font-family: 'Inter', sans-serif; }
+                .back-btn { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid #e2e8f0; background: white; color: #64748b; transition: all 0.2s; margin: 1.5rem 0 0 1.5rem; }
+                .back-btn:hover { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
+                .tab-navigation { display: flex; gap: 0.5rem; background: #f1f5f9; padding: 0.35rem; border-radius: 14px; }
+                .tab-btn { padding: 0.5rem 1.25rem; border: none; background: transparent; color: #64748b; font-weight: 700; font-size: 0.9rem; border-radius: 10px; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; }
+                .tab-btn.active { background: #ffffff; color: #0d6efd; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+                .content-layout { display: flex; flex: 1; }
+                @media (max-width: 992px) {
+                    .content-layout { flex-direction: column; overflow-y: auto; }
+                    .main-content-scroll { overflow-y: visible; height: auto; padding: 1rem; }
+                    .review-sidebar { width: 100% !important; border-left: none; border-top: 1px solid #e2e8f0; height: auto !important; }
+                    .create-exam-container { height: auto; min-height: calc(100vh - 75px); overflow-y: auto; }
+                }
+                .main-content-scroll { flex: 1; padding: 2rem; }
+                .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+                .btn-ghost { background: transparent; border: 1px solid #e2e8f0; padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; }
+                .btn-ghost:hover { background: #f1f5f9; color: #1e293b; }
+                .btn-primary-sm { background: #0d6efd; color: white; border: none; padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; transition: all 0.2s; cursor: pointer; }
+                .btn-primary-sm:hover { background: #0b5ed7; transform: translateY(-1px); }
+                .papers-tabs { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+                .paper-tab { padding: 0.6rem 1.25rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 30px; font-weight: 700; font-size: 0.85rem; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; transition: all 0.2s; }
+                .paper-tab.active { background: #1e293b; color: #ffffff; border-color: #1e293b; }
+                .delete-paper { background: rgba(239, 68, 68, 0.1); border: none; color: #ef4444; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+                .delete-paper:hover { background: #ef4444; color: white; }
+                .add-paper-btn { width: 36px; height: 36px; border-radius: 50%; border: 2px dashed #cbd5e1; background: transparent; color: #64748b; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+                .add-paper-btn:hover { border-color: #0d6efd; color: #0d6efd; background: #f0f7ff; }
+                .question-form-card { background: #ffffff; border-radius: 20px; border: 1px solid #0d6efd33; overflow: hidden; border-left: 4px solid #0d6efd; }
+                .form-header { padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; }
+                .form-body { padding: 1.5rem; }
+                .form-control-minimal { width: 100%; padding: 0.75rem 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.95rem; transition: all 0.2s; }
+                .form-control-minimal:focus { outline: none; background: #ffffff; border-color: #0d6efd; box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.05); }
+                .input-group-minimal { display: flex; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+                .opt-label { padding: 0 1rem; font-weight: 800; color: #64748b; border-right: 1px solid #e2e8f0; }
+                .input-group-minimal .form-control-minimal { border: none; background: transparent; }
+                .form-label-sm { display: block; font-size: 0.75rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 0.4rem; }
+                .form-select-minimal { width: 100%; padding: 0.6rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+                .btn-accent-sm { background: #22d3ee; color: #1e293b; border: none; padding: 0.75rem; border-radius: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; }
+                .btn-accent-sm:hover { background: #06b6d4; transform: translateY(-1px); }
+                .btn-update-sm { background: #f59e0b; color: white; border: none; padding: 0.75rem; border-radius: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; }
+                .btn-update-sm:hover { background: #d97706; transform: translateY(-1px); }
+                .btn-build { background: #10b981; color: white; border: none; padding: 1rem; border-radius: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 0.75rem; transition: all 0.2s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); width: 100%; }
+                .btn-build:hover:not(:disabled) { background: #059669; transform: translateY(-2px); }
+                .btn-build:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+                .review-sidebar { width: 320px; background: #ffffff; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+                .btn-build:hover:not(:disabled) { background: #059669; transform: translateY(-2px); }
+                .btn-build:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+                .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+                .x-small { font-size: 0.75rem; }
                 .cursor-pointer { cursor: pointer; }
+                .text-primary { color: #0d6efd !important; }
+                .text-success { color: #10b981 !important; }
+                ::-webkit-scrollbar { width: 6px; }
+                ::-webkit-scrollbar-track { background: transparent; }
+                ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+                ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+                
+                .debug-console { position: fixed; bottom: 0; left: 0; right: 0; background: #1e293b; color: #f8fafc; transition: all 0.3s; z-index: 1000; border-top: 1px solid #334155; }
+                .debug-header { padding: 0.75rem 1.5rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #0f172a; }
+                .debug-content { height: 300px; padding: 1.5rem; overflow-y: auto; font-family: monospace; font-size: 0.8rem; }
+                .debug-content pre { color: #38bdf8; background: transparent; border: none; padding: 0; margin: 0; }
+                .debug-content .uppercase { color: #94a3b8; margin-bottom: 0.5rem; display: block; }
+                .debug-log-list { display: flex; flex-direction: column; gap: 0.4rem; }
+                .debug-log-item { font-size: 0.75rem; display: flex; gap: 0.5rem; padding: 0.2rem 0; }
+                .debug-log-item.error { color: #f87171; }
+                .debug-log-item.info { color: #34d399; }
+                .debug-log-item .timestamp { color: #64748b; flex-shrink: 0; }
             `}</style>
         </div>
     );

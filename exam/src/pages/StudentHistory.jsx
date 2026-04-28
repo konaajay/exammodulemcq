@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { examService } from '../services/examService';
 import { studentService } from '../services/studentService';
+import { useAuth } from '../context/AuthContext';
 import { 
     Award, Calendar, Clock, ArrowLeft, 
     Trophy, ChevronRight, CheckCircle2, AlertCircle,
@@ -13,6 +14,8 @@ import { motion } from 'framer-motion';
 const StudentHistory = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user: currentUser } = useAuth();
+    const isAdmin = currentUser?.role === 'ADMIN';
     const [student, setStudent] = useState(null);
     const [attempts, setAttempts] = useState([]);
     const [exams, setExams] = useState({});
@@ -57,10 +60,24 @@ const StudentHistory = () => {
 
     if (!student) return <div className="text-center p-5">Student records not found.</div>;
 
-    const completedAttempts = attempts.filter(a => a.status === 'COMPLETED');
-    const avgScore = completedAttempts.length > 0 
-        ? (completedAttempts.reduce((acc, curr) => acc + (curr.score || 0), 0) / completedAttempts.length).toFixed(1)
+    const completedAttempts = attempts.filter(a => a.status === 'COMPLETED').map(a => {
+        const total = exams[a.examId]?.totalMarks || 100;
+        return { ...a, percent: (a.score / total) * 100 };
+    });
+
+    const avgPercent = completedAttempts.length > 0 
+        ? (completedAttempts.reduce((acc, curr) => acc + curr.percent, 0) / completedAttempts.length).toFixed(1)
         : 0;
+    
+    const bestPercent = completedAttempts.length > 0
+        ? Math.max(...completedAttempts.map(a => a.percent)).toFixed(1)
+        : 0;
+
+    const latestPercent = completedAttempts.length > 0 
+        ? completedAttempts[completedAttempts.length - 1].percent 
+        : 0;
+    
+    const trend = latestPercent >= avgPercent ? 'UP' : 'DOWN';
 
     return (
         <div className="min-vh-100 bg-royal py-5">
@@ -69,12 +86,12 @@ const StudentHistory = () => {
                 {/* Header Section */}
                 <div className="d-flex align-items-center justify-content-between mb-5">
                     <div className="d-flex align-items-center gap-3">
-                        <button onClick={() => navigate('/admin/students')} className="btn btn-white shadow-sm border rounded-circle p-2 hover-elevate">
+                        <button onClick={() => navigate(isAdmin ? '/admin/students' : '/student/dashboard')} className="btn btn-white shadow-sm border rounded-circle p-2 hover-elevate">
                             <ArrowLeft size={20} />
                         </button>
                         <div>
-                            <h2 className="fw-black text-dark mb-0 ls-tight">Student Performance</h2>
-                            <p className="text-secondary small mb-0">Detailed analytical report for {student.name}</p>
+                            <h4 className="fw-black text-dark mb-0 ls-tight">Student Performance</h4>
+                            <p className="text-secondary small mb-0" style={{ fontSize: '0.75rem' }}>Detailed analytical report for {student.name}</p>
                         </div>
                     </div>
                     <div className="badge bg-indigo text-white px-4 py-3 rounded-pill shadow-indigo d-flex align-items-center gap-2">
@@ -85,12 +102,9 @@ const StudentHistory = () => {
                 {/* Profile Overview Card */}
                 <div className="row g-4 mb-5">
                     <div className="col-md-8">
-                        <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 h-100 bg-white">
-                            <div className="d-flex align-items-start gap-4">
-                                <div className="bg-indigo bg-opacity-10 text-indigo p-4 rounded-4 flex-shrink-0">
-                                    <Trophy size={48} />
-                                </div>
-                                <div className="flex-grow-1">
+                        <div className="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white">
+                            <div className="d-flex align-items-start gap-3">
+                                <div className="flex-grow-1 ps-2">
                                     <div className="d-flex justify-content-between align-items-start mb-3">
                                         <div>
                                             <h3 className="fw-bold text-dark h4 mb-1">{student.name}</h3>
@@ -98,23 +112,37 @@ const StudentHistory = () => {
                                                 <BookOpen size={14} /> {student.course} specialization
                                             </div>
                                         </div>
-                                        <div className="text-end">
-                                            <div className="h2 fw-black text-indigo mb-0">{avgScore}</div>
-                                            <div className="small text-muted fw-bold text-uppercase ls-wide">Avg Score</div>
+                                        <div className="text-end d-flex flex-column align-items-end gap-2">
+                                            <div className="d-flex align-items-baseline gap-2">
+                                                <div className="h3 fw-black text-indigo mb-0">{avgPercent}%</div>
+                                                <div className="small text-muted fw-bold ls-wide" style={{ fontSize: '0.6rem' }}>AVG %</div>
+                                            </div>
+                                            <div className="d-flex gap-4">
+                                                <div className="text-center">
+                                                    <div className="small fw-bold text-success mb-0" style={{ fontSize: '0.8rem' }}>{bestPercent}%</div>
+                                                    <div className="text-muted fw-bold ls-wide" style={{ fontSize: '0.5rem' }}>BEST</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className={`small fw-bold mb-0 ${trend === 'UP' ? 'text-success' : 'text-danger'}`} style={{ fontSize: '0.8rem' }}>
+                                                        {trend === 'UP' ? '↑' : '↓'} {trend}
+                                                    </div>
+                                                    <div className="text-muted fw-bold ls-wide" style={{ fontSize: '0.5rem' }}>TREND</div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="row mt-4 pt-4 border-top">
-                                        <div className="col-4">
-                                            <div className="small text-muted mb-1 fw-bold">Attempts</div>
+                                    <div className="row g-3 g-md-0 mt-3 mt-md-4 pt-3 pt-md-4 border-top align-items-center">
+                                        <div className="col-6 col-md-2 text-center border-end">
+                                            <div className="small text-muted mb-1 fw-bold" style={{ fontSize: '0.6rem' }}>Attempts</div>
                                             <div className="h5 fw-bold text-dark mb-0">{attempts.length}</div>
                                         </div>
-                                        <div className="col-4">
-                                            <div className="small text-muted mb-1 fw-bold">Completed</div>
+                                        <div className="col-6 col-md-2 text-center border-md-end">
+                                            <div className="small text-muted mb-1 fw-bold" style={{ fontSize: '0.6rem' }}>Completed</div>
                                             <div className="h5 fw-bold text-success mb-0">{completedAttempts.length}</div>
                                         </div>
-                                        <div className="col-4">
-                                            <div className="small text-muted mb-1 fw-bold">Email ID</div>
-                                            <div className="small text-dark text-truncate fw-medium" style={{ maxWidth: '120px' }} title={student.email}>{student.email}</div>
+                                        <div className="col-12 col-md-8 text-center text-md-start mt-3 mt-md-0 ps-md-4">
+                                            <div className="small text-muted mb-1 fw-bold" style={{ fontSize: '0.6rem' }}>Authorized Email</div>
+                                            <div className="text-dark fw-medium text-break" style={{ fontSize: '0.8rem' }}>{student.email}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -127,19 +155,17 @@ const StudentHistory = () => {
                                 <h5 className="small fw-bold text-uppercase opacity-75 ls-wide mb-4">Academic Status</h5>
                                 <div className="text-center py-3">
                                     {student.firstLogin ? (
-                                        <div className="d-flex flex-column align-items-center gap-3">
-                                            <AlertCircle size={50} className="bg-white bg-opacity-20 rounded-circle p-2" />
+                                        <div className="d-flex flex-column align-items-center gap-2">
+                                            <AlertCircle size={32} className="bg-white bg-opacity-20 rounded-circle p-2" />
                                             <div>
-                                                <div className="fw-bold">Pending Setup</div>
-                                                <div className="small opacity-75">Password not changed yet</div>
+                                                <div className="small fw-bold">Pending Setup</div>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="d-flex flex-column align-items-center gap-3">
-                                            <CheckCircle2 size={50} className="bg-white bg-opacity-20 rounded-circle p-2" />
+                                        <div className="d-flex flex-column align-items-center gap-2">
+                                            <CheckCircle2 size={32} className="bg-white bg-opacity-20 rounded-circle p-2" />
                                             <div>
-                                                <div className="fw-bold">Active Account</div>
-                                                <div className="small opacity-75">Verified Candidate</div>
+                                                <div className="small fw-bold">Active Account</div>
                                             </div>
                                         </div>
                                     )}
@@ -168,16 +194,19 @@ const StudentHistory = () => {
                                 key={attempt.id} 
                                 className="card border-0 shadow-sm rounded-4 overflow-hidden card-hover transition-all bg-white"
                             >
-                                <div className="card-body p-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
-                                    <div className="d-flex align-items-center gap-4">
-                                        <div className={`p-3 rounded-4 ${isCompleted ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
-                                            <Award size={28} />
+                                <div className="card-body p-2 px-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                                    <div className="d-flex align-items-center gap-3">
+                                        <div className={`p-2 rounded-3 ${isCompleted ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-warning'}`}>
+                                            <Award size={20} />
                                         </div>
                                         <div>
-                                            <h5 className="fw-bold text-dark mb-1">{exam.title || `Exam #${attempt.examId}`}</h5>
-                                            <div className="text-muted small d-flex align-items-center gap-3 flex-wrap">
+                                            <h6 className="fw-bold text-dark mb-0" style={{ fontSize: '0.85rem' }}>{exam.title || `Exam #${attempt.examId}`}</h6>
+                                            <div className="text-muted small d-flex align-items-center gap-3 flex-wrap" style={{ fontSize: '0.7rem' }}>
                                                 <span className="d-flex align-items-center gap-1"><Calendar size={14} /> {new Date(attempt.startTime).toLocaleDateString()}</span>
                                                 <span className="d-flex align-items-center gap-1"><Clock size={14} /> {new Date(attempt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                <span className="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill">
+                                                    Paper {attempt.attemptNumber || 1}
+                                                </span>
                                                 <span className="badge bg-light text-muted border px-2 py-1 rounded-pill">Attempt #{attempt.attemptNumber || 1}</span>
                                             </div>
                                         </div>
@@ -187,8 +216,8 @@ const StudentHistory = () => {
                                         {isCompleted ? (
                                             <>
                                                 <div className="d-none d-sm-block">
-                                                    <div className="small text-muted fw-bold text-uppercase ls-wide">Score</div>
-                                                    <div className="h5 fw-bold text-dark mb-0">{attempt.score} / {exam.totalMarks}</div>
+                                                    <div className="small text-muted text-uppercase fw-bold ls-wide" style={{ fontSize: '0.6rem' }}>Score</div>
+                                                    <div className="text-dark fw-bold mb-0" style={{ fontSize: '1rem' }}>{Number(attempt.score).toFixed(1).replace(/\.0$/, '')} / {exam.totalMarks}</div>
                                                 </div>
                                                 <div className="text-center px-4 border-start border-end">
                                                     <div className="small text-muted fw-bold text-uppercase ls-wide">Result</div>
@@ -198,9 +227,10 @@ const StudentHistory = () => {
                                                 </div>
                                                 <button 
                                                     onClick={() => navigate('/result', { state: { attemptId: attempt.id, examId: attempt.examId }})}
-                                                    className="btn btn-indigo rounded-pill px-4 fw-bold shadow-indigo d-flex align-items-center gap-2"
+                                                    className="btn btn-indigo rounded-pill px-3 py-1 small fw-bold shadow-indigo d-flex align-items-center gap-1"
+                                                    style={{ fontSize: '0.75rem' }}
                                                 >
-                                                    Report <ChevronRight size={16} />
+                                                    Report <ChevronRight size={14} />
                                                 </button>
                                             </>
                                         ) : (
@@ -222,16 +252,15 @@ const StudentHistory = () => {
             </div>
 
             <style>{`
-                .bg-royal { background: #f8fafc; }
-                .text-indigo { color: #4f46e5 !important; }
-                .bg-indigo { background-color: #4f46e5 !important; }
-                .shadow-indigo { box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4); }
+                .text-indigo { color: #059669 !important; }
+                .bg-indigo { background-color: #059669 !important; }
+                .shadow-indigo { box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.4); }
                 .fw-black { font-weight: 900; }
                 .ls-tight { letter-spacing: -0.02em; }
                 .ls-wide { letter-spacing: 0.1em; font-size: 0.65rem; }
                 .card-hover:hover { transform: translateY(-3px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); }
-                .btn-indigo { background-color: #4f46e5; color: white; border: none; }
-                .btn-indigo:hover { background-color: #4338ca; color: white; }
+                .btn-indigo { background-color: #059669; color: white; border: none; }
+                .btn-indigo:hover { background-color: #047857; color: white; }
                 .hover-elevate:hover { transform: translateY(-2px); }
             `}</style>
         </div>

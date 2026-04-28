@@ -13,6 +13,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@org.hibernate.annotations.SQLDelete(sql = "UPDATE exams SET deleted = true WHERE id = ?")
+@org.hibernate.annotations.SQLRestriction("deleted = false")
 public class Exam {
 
     @Id
@@ -48,6 +50,9 @@ public class Exam {
     private Integer maxAttempts = 1;
 
     @Builder.Default
+    private Boolean allowReattempt = false;
+
+    @Builder.Default
     private Boolean tabLock = false;
 
     @Builder.Default
@@ -56,20 +61,29 @@ public class Exam {
     @Builder.Default
     private Double negativeMarks = 0.0;
 
+    @Builder.Default
+    private Boolean deleted = false;
+
     private String status;
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "exam_questions", joinColumns = @JoinColumn(name = "exam_id"), inverseJoinColumns = @JoinColumn(name = "question_id"))
+    @Transient
     @Builder.Default
     private List<Question> questions = new ArrayList<>();
 
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "exam_id")
+    @Builder.Default
+    private List<QuestionSet> questionSets = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now(java.time.ZoneId.of("UTC"));
         if (this.status == null)
             this.status = "DRAFT";
+        if (this.deleted == null)
+            this.deleted = false;
     }
 }

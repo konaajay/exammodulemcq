@@ -61,11 +61,11 @@ body {
 
 :root {
   /* Default Light Theme Variables */
-  --primary: #0d6efd;
+  --primary: #bfdfd5;
   /* Bootstrap Blue */
   --accent: #0dcaf0;
   --muted: #6b7280;
-  --bg: #f8fafc;
+  --bg: #ffffff;
   --surface: #ffffff;
   --card-bg: #ffffff;
   --sidebar-bg: #ffffff;
@@ -79,7 +79,7 @@ body {
 
 /* THEME VARIABLES - Dark Mode Override */
 [data-theme="dark"] {
-  --primary: #3b82f6;
+  --primary: #4338ca;
   /* Modern Blue */
   --accent: #60a5fa;
   --muted: #94a3b8;
@@ -94,11 +94,11 @@ body {
 
 [data-theme="light"] {
   /* Use defaults from :root, but kept for explicit switching if needed */
-  --primary: #0d6efd;
+  --primary: #0f172a;
   --accent: #0dcaf0;
   --muted: #000000;
   /* Pure Black for maximum visibility */
-  --bg: #f8fafc;
+  --bg: #ffffff;
   --surface: #ffffff;
   --card-bg: #ffffff;
   --sidebar-bg: #ffffff;
@@ -203,7 +203,7 @@ body {
 
 .card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(184, 149, 149, 0.1);
 }
 
 body {

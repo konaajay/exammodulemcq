@@ -12,14 +12,17 @@ public interface ExamAttemptService {
 
     ExamAttempt autoSubmitAttempt(Long attemptId, Long studentId);
 
+    Object getResult(Long attemptId, Long studentId);
+
+    java.util.List<com.lms.www.management.dto.QuestionDTO> getQuestionsForAttempt(Long attemptId);
+
     ExamAttempt getAttemptById(Long attemptId, Long studentId);
 
     // ================= EVALUATE ATTEMPT =================
     void evaluateAttempt(Long attemptId);
 
     // ================= GET RESULT =================
-    Object getResult(Long attemptId, Long studentId);
-    
+
     ExamAttempt getAttemptByIdForSystem(Long attemptId);
 
     ExamAttempt updateAttemptStatus(ExamAttempt attempt);
@@ -30,5 +33,7 @@ public interface ExamAttemptService {
 
     void saveResponse(Long attemptId, Long questionId, String selectedOption);
 
-    java.util.List<ExamAttempt> getAttemptsByStudent(Long studentId);
+    java.util.List<ExamAttempt> getAttemptsByStudent(Long studentId, String email);
+    
+    java.util.Map<Long, String> getResponses(Long attemptId);
 }

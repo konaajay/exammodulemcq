@@ -26,17 +26,17 @@ export const examService = {
         return await api.post(`/api/exams/${examId}/assign-questions`, questionIds);
     },
 
-    uploadQuestions: async (examId, file) => {
+    uploadQuestions: async (examId, setName, file) => {
         const formData = new FormData();
         formData.append('file', file);
-        return await api.post(`/api/exams/${examId}/upload-questions`, formData, {
+        return await api.post(`/api/exams/${examId}/upload-questions?setName=${encodeURIComponent(setName || 'Default Paper')}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
     },
 
     // STUDENT: Start exam via token/examId
     startExam: async (examId, studentInfo) => {
-        return await api.post(`/api/exams/${examId}/attempts/public-start`, studentInfo);
+        return await api.post(`/api/exams/${examId}/attempts/start`, studentInfo);
     },
 
     saveResponse: async (attemptId, response) => {
@@ -68,8 +68,20 @@ export const examService = {
         return await api.get(`/api/exams/${examId}/attempts/all`);
     },
 
+    getAttemptQuestions: async (attemptId) => {
+        return await api.get(`/api/exams/attempts/${attemptId}/questions`);
+    },
+
     createWithQuestions: async (data) => {
         return await api.post('/api/exams/create-with-questions', data);
+    },
+
+    getSavedResponses: async (attemptId) => {
+        return await api.get(`/api/exams/attempts/${attemptId}/responses`);
+    },
+    
+    getAttemptByIdForSystem: async (attemptId) => {
+        return await api.get(`/api/exams/attempts/${attemptId}`);
     }
 };
 

@@ -20,6 +20,7 @@ public class ExamAttempt {
     private Long examId;
     private Long studentId; // Can be null for guest attempts
     private String token; // Unique session token for guest access
+    private Long questionSetId; // ID of the QuestionSet assigned to this attempt
     
     private String studentName; // For public link access
     private String studentEmail; // For public link access

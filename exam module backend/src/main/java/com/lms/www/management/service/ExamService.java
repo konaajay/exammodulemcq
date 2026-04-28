@@ -27,7 +27,7 @@ public interface ExamService {
 
     void assignQuestions(Long examId, List<Long> questionIds);
 
-    void uploadQuestionsToExam(Long examId, org.springframework.web.multipart.MultipartFile file);
+    void uploadQuestionsToExam(Long examId, String setName, org.springframework.web.multipart.MultipartFile file, Integer marks);
 
     Exam createExamWithQuestions(com.lms.www.management.dto.CreateExamRequest request);
 }

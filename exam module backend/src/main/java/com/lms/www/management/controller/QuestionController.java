@@ -28,8 +28,8 @@ public class QuestionController {
     private final QuestionService questionService;
 
     @PostMapping("/upload-mcq")
-    public ResponseEntity<List<Question>> upload(@RequestParam("file") MultipartFile file, @RequestParam("course") String course) {
-        return ResponseEntity.ok(questionService.saveBulkQuestionsWithReturn(file, course));
+    public ResponseEntity<List<Question>> upload(@RequestParam("file") MultipartFile file, @RequestParam("course") String course, @RequestParam(value = "marks", required = false) Integer marks) {
+        return ResponseEntity.ok(questionService.saveBulkQuestionsWithReturn(file, course, marks));
     }
 
     @PostMapping("/parse-csv")

@@ -50,8 +50,8 @@ public class ExamController {
     }
 
     @PostMapping("/{id}/upload-questions")
-    public ResponseEntity<com.lms.www.management.dto.ApiResponse> uploadQuestions(@PathVariable Long id, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
-        examService.uploadQuestionsToExam(id, file);
+    public ResponseEntity<com.lms.www.management.dto.ApiResponse> uploadQuestions(@PathVariable Long id, @RequestParam(value = "setName", required = false) String setName, @RequestParam("file") org.springframework.web.multipart.MultipartFile file, @RequestParam(value = "marks", required = false) Integer marks) {
+        examService.uploadQuestionsToExam(id, setName, file, marks);
         return ResponseEntity.ok(new com.lms.www.management.dto.ApiResponse(true, "Questions uploaded and attached to exam successfully"));
     }
 

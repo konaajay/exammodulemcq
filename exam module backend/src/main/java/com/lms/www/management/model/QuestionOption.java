@@ -43,8 +43,6 @@ public class QuestionOption {
     @Transient
     private Integer optionOrder = 0;
 
-    // --- Restored Fields for Service Compatibility ---
-
     @Column(name = "option_image_url")
     private String optionImageUrl;
 

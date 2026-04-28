@@ -7,6 +7,7 @@ import java.util.List;
 public interface QuestionService {
     void saveBulkQuestions(MultipartFile file, String course); 
     List<Question> saveBulkQuestionsWithReturn(MultipartFile file, String course);
+    List<Question> saveBulkQuestionsWithReturn(MultipartFile file, String course, Integer marks);
     List<Question> getAllQuestions();
     Question getQuestionById(Long id);
     Question saveQuestion(Question question);

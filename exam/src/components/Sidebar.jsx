@@ -1,21 +1,20 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { useLocation, NavLink } from 'react-router-dom';
 import { 
-    LayoutDashboard, PlusCircle, FileUp, GraduationCap, 
-    ChevronLeft, ChevronRight, User, HelpCircle, Users, Layers,
-    LogOut
+    LayoutDashboard, PlusCircle, GraduationCap, 
+    ChevronLeft, ChevronRight, User,
+    LogOut, Users, BookOpen, Settings, Shield, Layout
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ isCollapsed, onToggle }) => {
     const { user, logout } = useAuth();
+    const location = useLocation();
     
     const navItems = [
         { path: '/admin/dashboard', icon: <LayoutDashboard size={22} />, label: 'Dashboard' },
-        { path: '/admin/students', icon: <Users size={22} />, label: 'Students' },
-        { path: '/admin/courses', icon: <Layers size={22} />, label: 'Courses' },
-        { path: '/admin/students/create', icon: <PlusCircle size={22} />, label: 'Add Student' },
         { path: '/admin/create', icon: <PlusCircle size={22} />, label: 'New Exam' },
+        { path: '/admin/students', icon: <Users size={22} />, label: 'Students' },
+        { path: '/admin/courses', icon: <BookOpen size={22} />, label: 'Courses' },
     ];
 
     return (
@@ -55,7 +54,7 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
                 </div>
                 {!isCollapsed && (
                     <span className="fw-black fs-5 text-dark ls-tight animate-fade-in">
-                        Class<span className="text-primary">X360</span>
+                        Exam<span className="text-primary">Master</span>
                     </span>
                 )}
             </div>
@@ -63,23 +62,52 @@ const Sidebar = ({ isCollapsed, onToggle }) => {
             {/* Main Navigation */}
             <nav className="flex-grow-1 px-3">
                 <div className="nav nav-pills flex-column gap-2">
-                    {navItems.map((item) => (
-                        <NavLink 
-                            key={item.path}
-                            to={item.path}
-                            className={({ isActive }) => 
-                                `nav-link d-flex align-items-center rounded-3 p-3 transition-all ${
-                                    isActive 
-                                    ? 'bg-indigo text-white shadow-indigo' 
-                                    : 'text-secondary hover-bg-light'
-                                } ${isCollapsed ? 'justify-content-center' : 'gap-3'}`
-                            }
-                            title={isCollapsed ? item.label : ''}
-                        >
-                            <span className="flex-shrink-0">{item.icon}</span>
-                            {!isCollapsed && <span className="fw-bold fs-6 animate-fade-in">{item.label}</span>}
-                        </NavLink>
-                    ))}
+                    {location.pathname.startsWith('/admin/create') ? (
+                        // Exam Creation Specific Navigation
+                        <>
+                            <div className={`text-muted x-small fw-bold px-3 mb-2 uppercase ${isCollapsed ? 'd-none' : ''}`}>Exam Config</div>
+                            {[
+                                { id: 'general', label: 'General Settings', icon: <Settings size={22} />, path: '/admin/create?tab=general' },
+                                { id: 'security', label: 'Security', icon: <Shield size={22} />, path: '/admin/create?tab=security' },
+                                { id: 'questions', label: 'Questions', icon: <Layout size={22} />, path: '/admin/create?tab=questions' }
+                            ].map(tab => (
+                                <NavLink
+                                    key={tab.id}
+                                    to={tab.path}
+                                    className={({ isActive }) => 
+                                        `nav-link d-flex align-items-center rounded-3 p-3 transition-all ${
+                                            isActive 
+                                            ? 'bg-indigo text-white shadow-indigo' 
+                                            : 'text-secondary hover-bg-light'
+                                        } ${isCollapsed ? 'justify-content-center' : 'gap-3'}`
+                                    }
+                                    title={isCollapsed ? tab.label : ''}
+                                >
+                                    <span className="flex-shrink-0">{tab.icon}</span>
+                                    {!isCollapsed && <span className="fw-bold fs-6 animate-fade-in">{tab.label}</span>}
+                                </NavLink>
+                            ))}
+                        </>
+                    ) : (
+                        // Standard Admin Navigation
+                        navItems.map((item) => (
+                            <NavLink 
+                                key={item.path}
+                                to={item.path}
+                                className={({ isActive }) => 
+                                    `nav-link d-flex align-items-center rounded-3 p-3 transition-all ${
+                                        isActive 
+                                        ? 'bg-indigo text-white shadow-indigo' 
+                                        : 'text-secondary hover-bg-light'
+                                    } ${isCollapsed ? 'justify-content-center' : 'gap-3'}`
+                                }
+                                title={isCollapsed ? item.label : ''}
+                            >
+                                <span className="flex-shrink-0">{item.icon}</span>
+                                {!isCollapsed && <span className="fw-bold fs-6 animate-fade-in">{item.label}</span>}
+                            </NavLink>
+                        ))
+                    )}
                 </div>
             </nav>
 

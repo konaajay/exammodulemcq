@@ -21,17 +21,27 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     public void saveBulkQuestions(MultipartFile file, String course) {
-        saveBulkQuestionsWithReturn(file, course);
+        saveBulkQuestionsWithReturn(file, course, null);
     }
 
     @Override
     @org.springframework.transaction.annotation.Transactional
     public List<Question> saveBulkQuestionsWithReturn(MultipartFile file, String course) {
-        List<Question> questions = parseCsvToQuestions(file);
-        for (Question q : questions) {
+        return saveBulkQuestionsWithReturn(file, course, null);
+    }
+
+    @Override
+    @org.springframework.transaction.annotation.Transactional
+    public List<Question> saveBulkQuestionsWithReturn(MultipartFile file, String course, Integer marks) {
+        List<Question> parsedQuestions = parseCsvToQuestions(file);
+        List<Question> persistedQuestions = new java.util.ArrayList<>();
+        
+        for (Question q : parsedQuestions) {
             q.setCourse(course);
+            if (marks != null) {
+                q.setMarks(marks);
+            }
             
-            // Sync with existing if necessary (optional depending on desired behavior)
             Question existing = questionRepository.findByQuestionTextIgnoreCase(q.getQuestionText().trim()).orElse(null);
             if (existing != null) {
                 existing.setOptionA(q.getOptionA());
@@ -42,12 +52,12 @@ public class QuestionServiceImpl implements QuestionService {
                 existing.setExplanation(q.getExplanation());
                 existing.setMarks(q.getMarks());
                 existing.setCourse(course);
-                questionRepository.save(existing);
+                persistedQuestions.add(existing);
             } else {
-                questionRepository.save(q);
+                persistedQuestions.add(q);
             }
         }
-        return questions;
+        return questionRepository.saveAll(persistedQuestions);
     }
 
     @Override

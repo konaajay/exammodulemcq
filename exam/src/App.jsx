@@ -1,17 +1,17 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
+import Navbar from './components/Navbar';
 import ExamDashboard from './pages/ExamDashboard';
 import CreateExam from './pages/CreateExam';
 import AttemptExam from './pages/AttemptExam';
 import Result from './pages/Result';
 import AdminPreview from './pages/AdminPreview';
-import CreateStudent from './pages/CreateStudent';
-import ManageCourses from './pages/ManageCourses';
 import ExamResults from './pages/ExamResults';
-import StudentList from './pages/StudentList';
-import StudentHistory from './pages/StudentHistory';
 import StudentDashboard from './pages/StudentDashboard';
+import StudentHistory from './pages/StudentHistory';
+import CreateStudent from './pages/CreateStudent';
+import StudentList from './pages/StudentList';
+import ManageCourses from './pages/ManageCourses';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
@@ -19,33 +19,17 @@ import { AuthProvider } from './context/AuthContext';
 const MainLayout = ({ children }) => {
   const location = useLocation();
   const isExcluded = (path) => {
-    return !path.startsWith('/admin/');
+    return path === '/login' || path.startsWith('/exam/');
   };
 
-  const showSidebar = !isExcluded(location.pathname);
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const showNavigation = !isExcluded(location.pathname);
 
-  return (
-    <div className="d-flex">
-      {showSidebar && (
-        <Sidebar
-          isCollapsed={isCollapsed}
-          onToggle={() => setIsCollapsed(!isCollapsed)}
-        />
-      )}
-      <div
-        className="flex-grow-1"
-        style={{
-          marginLeft: showSidebar ? (isCollapsed ? '75px' : '260px') : '0',
-          transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          minHeight: '100vh',
-          backgroundColor: '#f8f9fa'
-        }}
-      >
+  return <div className="container-fluid p-0 bg-transparent">
+      {showNavigation && <Navbar />}
+      <main className="p-4 pt-5" style={{ height: 'auto', overflow: 'visible' }}>
         {children}
-      </div>
-    </div>
-  );
+      </main>
+    </div>;
 };
 
 function App() {
@@ -62,16 +46,16 @@ function App() {
             <Route path="/admin/create" element={<ProtectedRoute><CreateExam /></ProtectedRoute>} />
             <Route path="/admin/create/:id" element={<ProtectedRoute><CreateExam /></ProtectedRoute>} />
             <Route path="/admin/preview/:id" element={<ProtectedRoute><AdminPreview /></ProtectedRoute>} />
-            <Route path="/admin/students/create" element={<ProtectedRoute><CreateStudent /></ProtectedRoute>} />
-            <Route path="/admin/students" element={<ProtectedRoute><StudentList /></ProtectedRoute>} />
-            <Route path="/admin/courses" element={<ProtectedRoute><ManageCourses /></ProtectedRoute>} />
             <Route path="/admin/results/:id" element={<ProtectedRoute><ExamResults /></ProtectedRoute>} />
-            <Route path="/admin/students/history/:id" element={<ProtectedRoute><StudentHistory /></ProtectedRoute>} />
+            <Route path="/admin/students" element={<ProtectedRoute><StudentList /></ProtectedRoute>} />
+            <Route path="/admin/students/create" element={<ProtectedRoute><CreateStudent /></ProtectedRoute>} />
+            <Route path="/admin/courses" element={<ProtectedRoute><ManageCourses /></ProtectedRoute>} />
 
-            {/* Student Routes (Public via Link) */}
+            {/* Student Routes */}
             <Route path="/exam/:id" element={<AttemptExam />} />
             <Route path="/result" element={<Result />} />
             <Route path="/student/dashboard" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+            <Route path="/student/history/:id" element={<ProtectedRoute><StudentHistory /></ProtectedRoute>} />
 
             {/* Fallback Redirect */}
             <Route path="/" element={<Navigate to="/admin/dashboard" />} />

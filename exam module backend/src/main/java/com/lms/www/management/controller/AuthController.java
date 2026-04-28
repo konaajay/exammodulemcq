@@ -5,17 +5,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import com.lms.www.management.repository.AdminRepository;
 import lombok.RequiredArgsConstructor;
+import com.lms.www.config.JwtService;
+import lombok.extern.slf4j.Slf4j;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@Slf4j
 public class AuthController {
 
     private final AdminRepository adminRepository;
     private final com.lms.www.management.repository.StudentRepository studentRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
@@ -27,13 +30,14 @@ public class AuthController {
         if (adminOpt.isPresent()) {
             var admin = adminOpt.get();
             if (passwordEncoder.matches(request.getPassword(), admin.getPassword())) {
-                System.out.println("Admin found and authenticated.");
+                String token = jwtService.generateToken(admin.getEmail(), "ADMIN");
                 return ResponseEntity.ok(Map.of(
                         "email", admin.getEmail(),
                         "role", "ADMIN",
+                        "token", token,
                         "success", true));
             } else {
-                System.out.println("Admin found but password mismatch for: " + email);
+                log.warn("Admin password mismatch for: {}", email);
             }
         }
 
@@ -42,9 +46,8 @@ public class AuthController {
         if (studentOpt.isPresent()) {
             var student = studentOpt.get();
             if (passwordEncoder.matches(request.getPassword(), student.getPassword())) {
-                System.out.println("Student found and authenticated: " + email);
+                String token = jwtService.generateToken(student.getEmail(), "STUDENT");
                 
-                // Update firstLogin flag if this is their first time
                 if (Boolean.TRUE.equals(student.getFirstLogin())) {
                     student.setFirstLogin(false);
                     studentRepository.save(student);
@@ -56,10 +59,11 @@ public class AuthController {
                         "name", student.getName(),
                         "course", student.getCourse(),
                         "role", "STUDENT",
+                        "token", token,
                         "firstLogin", student.getFirstLogin(),
                         "success", true));
             } else {
-                System.out.println("Student found but password mismatch for: " + email);
+                log.warn("Student password mismatch for: {}", email);
             }
         }
 

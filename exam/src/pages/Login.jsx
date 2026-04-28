@@ -96,7 +96,7 @@ const Login = () => {
 
             <style>{`
                 .bg-royal {
-                    background: radial-gradient(circle at top right, #f8f9fa 0%, #e9ecef 100%);
+                    background: #ffffff;
                     background-attachment: fixed;
                 }
                 .login-card {

@@ -3,7 +3,7 @@ import { studentService } from '../services/studentService';
 import { 
     Users, Search, Filter, Mail, Phone, 
     BookOpen, Trash2, MoreVertical, CheckCircle, 
-    Clock, MailCheck, Award
+    Clock, MailCheck, Award, UserPlus
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
@@ -78,7 +78,7 @@ const StudentList = () => {
     const courses = ['All', ...new Set(students.map(s => s.course))].filter(Boolean);
 
     if (loading) return (
-        <div className="d-flex align-items-center justify-content-center min-vh-100 bg-light">
+        <div className="d-flex align-items-center justify-content-center min-vh-100 bg-white">
             <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading Students...</span>
             </div>
@@ -86,7 +86,7 @@ const StudentList = () => {
     );
 
     return (
-        <div className="container-fluid p-4 p-lg-5 bg-royal min-vh-100">
+        <div className="container-fluid p-0 bg-transparent">
             <ToastContainer />
             <div className="d-flex justify-content-between align-items-center mb-5">
                 <div>
@@ -98,6 +98,12 @@ const StudentList = () => {
                         <Users size={18} className="text-primary" />
                         <span className="fw-bold fs-6">{students.length} Total Enrolled</span>
                     </div>
+                    <button 
+                        onClick={() => navigate('/admin/students/create')} 
+                        className="btn btn-primary px-4 py-3 rounded-4 fw-bold shadow-indigo d-flex align-items-center gap-2"
+                    >
+                        <UserPlus size={20} /> Create Student
+                    </button>
                 </div>
             </div>
 
@@ -133,22 +139,24 @@ const StudentList = () => {
             <div className="mb-5">
                 {!isMobile ? (
                     /* Desktop View: Professional Table */
-                    <div className="card border-0 shadow-sm rounded-4">
+                    <div className="card border-0 shadow-none bg-transparent overflow-hidden">
                         <div className="table-responsive">
                             <table className="table table-hover align-middle mb-0">
                                 <thead className="bg-light border-bottom">
                                     <tr>
-                                        <th className="px-4 py-3 border-0 text-muted small fw-bold text-uppercase ls-1">Student Details</th>
-                                        <th className="py-3 border-0 text-muted small fw-bold text-uppercase ls-1">Course</th>
-                                        <th className="py-3 border-0 text-muted small fw-bold text-uppercase ls-1">Contact Info</th>
-                                        <th className="py-3 border-0 text-muted small fw-bold text-uppercase ls-1">Access Status</th>
-                                        <th className="px-4 py-3 border-0 text-muted small fw-bold text-uppercase ls-1 text-end">Actions</th>
+                                        <th className="px-4 py-3 text-dark fw-bold text-uppercase ls-1" style={{ fontSize: '0.7rem', backgroundColor: '#f8fafc', width: '50px' }}>#</th>
+                                        <th className="py-3 text-dark fw-bold text-uppercase ls-1" style={{ fontSize: '0.75rem', backgroundColor: '#f8fafc' }}>Student Details</th>
+                                        <th className="py-3 text-dark fw-bold text-uppercase ls-1" style={{ fontSize: '0.75rem', backgroundColor: '#f8fafc' }}>Specialization</th>
+                                        <th className="py-3 text-dark fw-bold text-uppercase ls-1" style={{ fontSize: '0.75rem', backgroundColor: '#f8fafc' }}>Contact Info</th>
+                                        <th className="py-3 text-dark fw-bold text-uppercase ls-1" style={{ fontSize: '0.75rem', backgroundColor: '#f8fafc' }}>Portal Status</th>
+                                        <th className="px-4 py-3 text-dark fw-bold text-uppercase ls-1 text-end" style={{ fontSize: '0.75rem', backgroundColor: '#f8fafc' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white">
-                                    {filteredStudents.length > 0 ? filteredStudents.map((s) => (
+                                    {filteredStudents.length > 0 ? filteredStudents.map((s, index) => (
                                         <tr key={s.id} className="transition-all hover-bg-light">
-                                            <td className="px-4 py-3">
+                                            <td className="px-4 py-3 text-muted fw-bold small">{index + 1}</td>
+                                            <td className="py-3">
                                                 <div className="d-flex align-items-center gap-3">
                                                     <div className="bg-primary-subtle text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center border border-primary-subtle shadow-sm" style={{ width: '42px', height: '42px', fontSize: '0.9rem' }}>
                                                         {s.name.charAt(0)}
@@ -310,11 +318,11 @@ const StudentList = () => {
 
             <style>{`
                 .ls-1 { letter-spacing: 0.05em; }
-                .bg-royal { background: #f8fafc; }
-                .hover-bg-light:hover { background-color: rgba(13, 110, 253, 0.02); }
+                .bg-royal { background: #ffffff; }
+                .hover-bg-light:hover { background-color: #f8fafc !important; }
+                .table-hover tbody tr:hover { background-color: #f1f5f9; }
                 .transition-all { transition: all 0.2s ease-in-out; }
-                .hover-primary:hover { color: #0d6efd !important; }
-                .hover-bg-danger-subtle:hover { background-color: #fee2e2; color: #dc2626 !important; }
+                .table td { border-bottom: 1px solid #f1f5f9; }
                 .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08); }
                 .hover-row { transition: transform 0.2s; }
                 .hover-row:hover { transform: translateY(-2px); }

@@ -19,13 +19,15 @@ import lombok.Builder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public class Question {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "question_text", length = 1000)
+    @jakarta.persistence.Lob
+    @Column(name = "question_text", columnDefinition = "TEXT")
     private String questionText;
 
     private String optionA;
@@ -38,7 +40,8 @@ public class Question {
 
     private String course;
 
-    @Column(length = 1000)
+    @jakarta.persistence.Lob
+    @Column(columnDefinition = "TEXT")
     private String explanation;
 
     @Builder.Default

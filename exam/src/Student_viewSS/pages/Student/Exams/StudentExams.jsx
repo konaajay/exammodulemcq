@@ -43,7 +43,7 @@ const StudentExams = () => {
                         id: exam.id || exam.sessionId || exam.examId || `exam-${idx}`,
                         examId: exam.examId || e.id || e.examId,
                         title: exam.examTitle || exam.title || e.examTitle || e.title || e.examName || "Assessment",
-                        courseName: exam.courseName || exam.batchName || e.courseName || "LMS Course",
+                        courseName: exam.courseName || e.courseName || "LMS Course",
                         status: exam.status || (exam.attemptStatus === 'SUBMITTED' ? 'Completed' : 'Scheduled'),
                         type: exam.type || exam.examType || e.type || e.examType || "Examination",
                         date: exam.examDate || exam.scheduledDate || s.examDate || s.scheduledDate || s.date || s.scheduleDate || (exam.startTime ? new Date(exam.startTime).toLocaleDateString() : "N/A"),
@@ -193,7 +193,7 @@ const StudentExams = () => {
                                             <div>
                                                 <div className="alert alert-info d-flex align-items-start gap-2 p-2 mb-3 rounded-3 border-0 bg-info bg-opacity-10 text-info small">
                                                     <Info size={16} className="mt-1 flex-shrink-0" />
-                                                    <span>Proctored session. Check system requirments beforehand.</span>
+                                                    <span>Complete all questions before the timer expires. Progress is saved automatically.</span>
                                                 </div>
                                                 <button
                                                     className="btn btn-primary w-100 py-2 fw-bold shadow-sm transition-all d-flex align-items-center justify-content-center gap-2"

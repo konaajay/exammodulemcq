@@ -102,66 +102,78 @@ const StudentDashboard = () => {
                                             <div className="row align-items-center">
                                                 <div className="col-md-8">
                                                     <div className="d-flex align-items-center gap-2 mb-2">
-                                                        <span className={`badge px-3 py-2 rounded-pill small ${
-                                                            isExpired ? 'bg-secondary-subtle text-secondary' : 
-                                                            isFuture ? 'bg-warning-subtle text-warning' : 'bg-success-subtle text-success'
-                                                        }`}>
+                                                        <span className={`badge px-3 py-1 rounded-pill`} style={{ fontSize: '0.65rem', backgroundColor: isExpired ? '#f3f4f6' : isFuture ? '#fef3c7' : '#d1fae5', color: isExpired ? '#4b5563' : isFuture ? '#d97706' : '#059669' }}>
                                                             {isExpired ? 'Completed' : isFuture ? 'Upcoming' : 'Ongoing'}
                                                         </span>
-                                                        <span className="text-muted fs-xs fw-bold text-uppercase ls-wide">Assessment ID: #{exam.id}</span>
+                                                        <span className="text-muted fs-xs fw-bold text-uppercase ls-wide">ID: #{exam.id}</span>
                                                     </div>
-                                                    <h3 className="h5 fw-bold text-dark mb-3">{exam.title}</h3>
+                                                    <h3 className="h6 fw-bold text-dark mb-2">{exam.title}</h3>
                                                     
-                                                    <div className="d-flex flex-wrap gap-4 text-secondary small">
-                                                        <div className="d-flex align-items-center gap-2">
-                                                            <Clock size={16} className="text-primary" />
-                                                            {exam.durationMinutes} Minutes
+                                                    <div className="d-flex flex-wrap gap-3 text-secondary" style={{ fontSize: '0.7rem' }}>
+                                                        <div className="d-flex align-items-center gap-1">
+                                                            <Clock size={12} className="text-primary" />
+                                                            {exam.durationMinutes} Min
                                                         </div>
-                                                        <div className="d-flex align-items-center gap-2">
-                                                            <Calendar size={16} className="text-primary" />
-                                                            Ends {new Date(exam.endTime).toLocaleDateString()}
+                                                        <div className="d-flex align-items-center gap-1">
+                                                            <Calendar size={12} className="text-primary" />
+                                                            {new Date(exam.endTime).toLocaleDateString()}
                                                         </div>
-                                                        <div className="d-flex align-items-center gap-2">
-                                                            <BookOpen size={16} className="text-primary" />
-                                                            {exam.course} specialization
+                                                        <div className="d-flex align-items-center gap-1">
+                                                            <BookOpen size={12} className="text-primary" />
+                                                            {exam.course}
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="col-md-4 text-md-end mt-4 mt-md-0">
+                                                <div className="col-md-4 text-md-end mt-3 mt-md-0">
                                                     {(() => {
-                                                        const usedAttempts = myAttempts.filter(a => a.examId === exam.id).length;
+                                                        const examAttempts = myAttempts.filter(a => String(a.examId) === String(exam.id))
+                                                            .sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+                                                        const usedAttempts = examAttempts.length;
                                                         const maxAttempts = exam.maxAttempts || 1;
-                                                        const attemptsLeft = Math.max(0, maxAttempts - usedAttempts);
                                                         const isLimitReached = usedAttempts >= maxAttempts;
+                                                        const latestAttempt = examAttempts[0];
 
                                                         if (isExpired) {
+                                                            if (latestAttempt) {
+                                                                return (
+                                                                    <button 
+                                                                        onClick={() => navigate('/result', { state: { attemptId: latestAttempt.id, examId: exam.id }})} 
+                                                                        className="btn btn-outline-dark btn-sm rounded-pill px-4 fw-bold w-100 w-md-auto"
+                                                                    >
+                                                                        Review Result
+                                                                    </button>
+                                                                );
+                                                            }
                                                             return (
-                                                                <button onClick={() => navigate(`/exam/${exam.id}`)} className="btn btn-outline-secondary btn-lg rounded-pill px-4">
-                                                                    Review Paper
+                                                                <button disabled className="btn btn-light btn-sm rounded-pill px-4 text-muted w-100 w-md-auto">
+                                                                    Missed
                                                                 </button>
                                                             );
                                                         }
 
                                                         if (isFuture) {
-                                                            return <button disabled className="btn btn-light btn-lg rounded-pill px-4 text-muted">Scheduled</button>;
+                                                            return <button disabled className="btn btn-light btn-sm rounded-pill px-4 text-muted w-100 w-md-auto">Scheduled</button>;
                                                         }
 
                                                         return (
-                                                            <div className="d-flex flex-column align-items-md-end gap-2">
-                                                                <div className={`badge rounded-pill px-3 py-2 border ${isLimitReached ? 'bg-danger-subtle text-danger border-danger' : 'bg-primary-subtle text-primary border-primary'}`}>
-                                                                    Used: {usedAttempts} / Max: {maxAttempts}
+                                                            <div className="d-flex flex-column align-items-center align-items-md-end gap-2">
+                                                                <div className={`badge rounded-pill px-3 py-1 border small ${isLimitReached ? 'bg-success-subtle text-success border-success' : 'bg-primary-subtle text-primary border-primary'}`}>
+                                                                    {usedAttempts} / {maxAttempts} Attempts
                                                                 </div>
-                                                                <button 
-                                                                    disabled={isLimitReached}
-                                                                    onClick={() => navigate(`/exam/${exam.id}`)}
-                                                                    className={`btn btn-lg rounded-pill px-4 fw-bold shadow-sm d-flex align-items-center gap-2 ms-auto ${isLimitReached ? 'btn-light text-muted border' : 'btn-primary'}`}
-                                                                >
-                                                                    {isLimitReached ? 'Attempts Exhausted' : (
-                                                                        <>Start Exam <ArrowRight size={18} /></>
-                                                                    )}
-                                                                </button>
-                                                                {!isLimitReached && (
-                                                                    <div className="text-secondary fs-xs fw-bold text-uppercase opacity-75">{attemptsLeft} Attempts Left</div>
+                                                                {isLimitReached ? (
+                                                                    <button 
+                                                                        onClick={() => navigate('/result', { state: { attemptId: latestAttempt.id, examId: exam.id }})}
+                                                                        className="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold w-100 w-md-auto"
+                                                                    >
+                                                                        Review Result
+                                                                    </button>
+                                                                ) : (
+                                                                    <button 
+                                                                        onClick={() => navigate(`/exam/${exam.id}`)}
+                                                                        className="btn btn-primary btn-sm rounded-pill px-4 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 w-100 w-md-auto"
+                                                                    >
+                                                                        {usedAttempts > 0 ? 'Re-attempt' : 'Start Exam'}
+                                                                    </button>
                                                                 )}
                                                             </div>
                                                         );
@@ -183,18 +195,23 @@ const StudentDashboard = () => {
 
                     {/* Sidebar Area: My Profile / Stats */}
                     <div className="col-lg-4">
-                        <div className="card border-0 shadow-sm rounded-4 mb-4 bg-primary text-white p-4">
+                        <div className="card border-0 shadow-lg rounded-4 mb-4 text-white p-4" style={{ background: 'linear-gradient(135deg, #059669 0%, #064e3b 100%)' }}>
                             <h5 className="fw-bold mb-4 small text-uppercase opacity-75 ls-wide">Your Performance</h5>
-                            <div className="d-flex align-items-center gap-4 mb-4">
-                                <div className="bg-white bg-opacity-20 p-3 rounded-4 shadow-inner">
-                                    <Trophy size={40} className="text-warning" />
+                            <div className="d-flex align-items-center gap-3 mb-3">
+                                <div className="bg-white bg-opacity-20 p-2 rounded-3 shadow-inner">
+                                    <Trophy size={24} className="text-warning" />
                                 </div>
                                 <div>
-                                    <div className="h3 fw-bold mb-0">N/A</div>
-                                    <div className="small opacity-75">Average Score</div>
+                                    <div className="h4 fw-bold mb-0">{myAttempts.length}</div>
+                                    <div className="small opacity-75" style={{ fontSize: '0.7rem' }}>Total Attempts</div>
                                 </div>
                             </div>
-                            <div className="small opacity-75 mb-0">Complete your first assessment to see detailed analytics and course ranking.</div>
+                            <button 
+                                onClick={() => navigate(`/student/history/${user.id}`)}
+                                className="btn btn-white text-primary w-100 rounded-pill fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2"
+                            >
+                                <Clock size={16} /> View My History
+                            </button>
                         </div>
 
                         <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
@@ -215,7 +232,7 @@ const StudentDashboard = () => {
             </div>
 
             <style>{`
-                .bg-royal { background: #f8fafc; }
+                .bg-royal { background: #ffffff; }
                 .ls-wide { letter-spacing: 0.1em; }
                 .fs-xs { font-size: 0.7rem; }
                 .card-hover:hover { 
