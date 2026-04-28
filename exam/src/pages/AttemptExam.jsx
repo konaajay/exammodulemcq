@@ -310,7 +310,10 @@ const AttemptExam = () => {
                             <button className="btn btn-outline-secondary px-4 py-2 rounded-3 fw-bold" disabled={currentIdx === 0} onClick={prevQuestion}>
                                 Previous
                             </button>
-                            <button className="btn btn-primary px-5 py-2 rounded-3 fw-bold shadow-indigo" onClick={nextQuestion}>
+                            <button 
+                                className="btn btn-primary px-5 py-2 rounded-3 fw-bold shadow-indigo" 
+                                onClick={currentIdx === questions.length - 1 ? () => handleFinalSubmit("Manual") : nextQuestion}
+                            >
                                 {currentIdx === questions.length - 1 ? "End of Exam" : "Save & Next"}
                             </button>
                         </div>
